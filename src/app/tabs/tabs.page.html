@@ -1,20 +1,66 @@
-<ion-tabs>
+<ion-split-pane contentId="main-content" when="md">
+  <ion-menu side="end" contentId="main-content">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Menú</ion-title>
+      </ion-toolbar>
+    </ion-header>
 
-  <ion-tab-bar slot="bottom">
-    <ion-tab-button tab="tab1" href="/tabs/tab1">
-      <ion-icon aria-hidden="true" name="triangle"></ion-icon>
-      <ion-label>Tab 1</ion-label>
-    </ion-tab-button>
+    <ion-content>
+      <ion-list>
+        <ion-item button (click)="goToProfile()">Perfil</ion-item>
+        <ion-item button (click)="goToSettings()">Configuración</ion-item>
+        <ion-item button (click)="logout()">Cerrar sesión</ion-item>
+        
+      </ion-list>
+    </ion-content>
+  </ion-menu>
 
-    <ion-tab-button tab="tab2" href="/tabs/tab2">
-      <ion-icon aria-hidden="true" name="ellipse"></ion-icon>
-      <ion-label>Tab 2</ion-label>
-    </ion-tab-button>
+  <ion-tabs id="main-content">
+    <ion-header>
+      <ion-toolbar>
 
-    <ion-tab-button tab="tab3" href="/tabs/tab3">
-      <ion-icon aria-hidden="true" name="square"></ion-icon>
-      <ion-label>Tab 3</ion-label>
-    </ion-tab-button>
-  </ion-tab-bar>
+        <ion-title class="logo-container">
+          <img src="assets/img/image.png" alt="Copper Mobil">
+        </ion-title>
 
-</ion-tabs>
+        <ion-buttons slot="end">
+          <ion-button (click)="toggleMenu()">
+            <ion-icon name="menu"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-tab-bar slot="bottom" *ngIf="showTabs">
+      <ion-tab-button tab="tab1" href="/tabs/tab1">
+        <ion-icon aria-hidden="true" name="gift"></ion-icon>
+        <ion-label>Beneficios</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="tab2" href="/tabs/tab2">
+        <ion-icon aria-hidden="true" name="wallet"></ion-icon>
+        <ion-label>Recargas</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="tab3" href="/tabs/tab3">
+        <ion-icon aria-hidden="true" name="home"></ion-icon>
+        <ion-label>Home</ion-label>
+      </ion-tab-button>
+      
+      <ion-tab-button tab="tab4" href="/tabs/tab4">
+        <ion-icon aria-hidden="true" name="stats-chart"></ion-icon>
+        <ion-label>Consumo</ion-label>
+      </ion-tab-button>
+      
+      <ion-tab-button tab="tab5" href="/tabs/tab5">
+        <ion-icon aria-hidden="true" name="help-circle"></ion-icon>
+        <ion-label>Soporte</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+
+    <router-outlet></router-outlet>
+
+  </ion-tabs>
+</ion-split-pane>

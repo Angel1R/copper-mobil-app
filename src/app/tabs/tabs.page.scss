@@ -1,1 +1,32 @@
 
+.logo-container {
+  text-align: center;
+  background-color: white;
+}
+
+.logo {
+  width: 120px;
+  height: auto;
+}
+
+.logo-container img {
+  width: 120px;
+  height: auto;
+  padding: 7px;
+}
+
+ion-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  background-color: transparent;
+}
+
+ion-icon {
+  font-size: auto;
+  background-color: transparent;
+}
+
+

@@ -1,0 +1,31 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Número de teléfono -->
+  <ion-item>
+    <ion-label position="floating">Número de Teléfono</ion-label>
+    <ion-input [(ngModel)]="phoneNumber" type="tel" maxlength="10" pattern="\d*" inputmode="numeric"></ion-input>
+  </ion-item>
+
+  <!-- Contraseña -->
+  <ion-item>
+    <ion-label position="floating">Contraseña</ion-label>
+    <ion-input [(ngModel)]="password" type="password"></ion-input>
+  </ion-item>
+
+  <!-- Botón de ingresar (solo activado si los datos son válidos) -->
+  <ion-button expand="full" [disabled]="!isValidLogin" (click)="login()">
+    Ingresar
+  </ion-button>
+
+  <!-- Botón para ir al registro -->
+  <ion-button expand="full" fill="outline" (click)="goToRegister()">
+    ¿No tienes cuenta? Regístrate
+  </ion-button>
+
+</ion-content>
