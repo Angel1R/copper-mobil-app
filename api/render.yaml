@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: coppermobile-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://angelrodrigoar55:kErd8XvJNJsTAzD4@copper.y1bfs2e.mongodb.net/copper_mobil?retryWrites=true&w=majority&authSource=admin

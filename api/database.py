@@ -23,8 +23,8 @@ faq_collection = db["faq"]
 except Exception as e:
     print("Error de conexión:", str(e)) '''
 
-print(client.list_database_names())
-print("Base de datos activa:", db.name)  # Verifica la base de datos en uso
+''' print(client.list_database_names())
+print("Base de datos activa:", db.name)  # Verifica la base de datos en uso '''
 
 ''' # Datos de prueba para insertar
 new_user = {
