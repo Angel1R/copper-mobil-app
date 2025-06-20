@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-tab2',
@@ -13,8 +14,9 @@ export class Tab2Page implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any[]>('http://localhost:8000/api/planes').subscribe(data => {
-      this.planes = data;
+    this.http.get<any[]>(`${environment.apiUrl}/planes`).subscribe({
+      next: (data) => this.planes = data,
+      error: (err) => console.error('Error cargando planes:', err)
     });
   }
 }
