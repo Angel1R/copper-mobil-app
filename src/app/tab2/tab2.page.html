@@ -1,11 +1,5 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Planes de Datos</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content>
-  <ion-list *ngIf="planes.length > 0; else cargando">
+  <ion-list *ngIf="!cargando && planes.length > 0; else estadoCarga">
     <ion-item *ngFor="let plan of planes">
       <ion-label>
         <h2>{{ plan.name }} - ${{ plan.price }}</h2>
@@ -17,8 +11,14 @@
     </ion-item>
   </ion-list>
 
-  <ng-template #cargando>
-    <ion-spinner name="dots"></ion-spinner>
-    <p style="text-align: center;">Cargando planes...</p>
+  <ng-template #estadoCarga>
+    <div *ngIf="cargando; else sinPlanes">
+      <ion-spinner name="dots"></ion-spinner>
+      <p style="text-align: center;">Cargando planes...</p>
+    </div>
+  </ng-template>
+
+  <ng-template #sinPlanes>
+    <p style="text-align: center; color: gray;">No se encontraron planes disponibles.</p>
   </ng-template>
 </ion-content>

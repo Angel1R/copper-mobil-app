@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
 from typing import List
@@ -11,21 +11,29 @@ from database import (
     data_usage_collection
 )
 
+# Inicializar FastAPI
 app = FastAPI()
 
-@app.get("/")
-def health_check():
-    return {"status": "online"}
+# 🌐 CORS: Permitir accesos desde móviles y entornos de desarrollo
+origins = [
+    "capacitor://localhost",            # WebView móvil (APK)
+    "http://localhost",                 # Navegador local
+    "http://localhost:8100",           # Ionic serve
+    "https://copper-mobil-app.onrender.com"  # Producción
+]
 
-
-# Habilitar CORS para acceso desde la app móvil
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8100"],  # O usa ["*"] solo mientras desarrollas
+    allow_origins=origins,              # No usar "*" si allow_credentials=True
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 🔎 Endpoint de salud (opcional)
+@app.get("/")
+def health_check():
+    return {"status": "online"}
 
 # 🟢 Crear usuario
 @app.post("/users/")
@@ -63,7 +71,7 @@ def obtener_planes():
     planes = list(plans_collection.find({}, {"_id": 0}))
     return planes
 
-# 🟢 Obtener plan de un usuario por su ID
+# 🟢 Obtener plan específico de un usuario
 @app.get("/api/planes/{user_id}")
 def get_user_plan(user_id: str):
     try:
@@ -78,7 +86,7 @@ def get_user_plan(user_id: str):
     except:
         raise HTTPException(status_code=400, detail="ID inválido o error de formato")
 
-# 🟢 Obtener consumo de datos del usuario
+# 🟢 Obtener consumo de datos de un usuario
 @app.get("/api/consumo/{user_id}")
 def get_data_usage(user_id: str):
     try:

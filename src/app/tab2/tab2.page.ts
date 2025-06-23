@@ -10,13 +10,21 @@ import { environment } from 'src/environments/environment';
 })
 export class Tab2Page implements OnInit {
   planes: any[] = [];
+  cargando: boolean = true;
 
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
     this.http.get<any[]>(`${environment.apiUrl}/planes`).subscribe({
-      next: (data) => this.planes = data,
-      error: (err) => console.error('Error cargando planes:', err)
+      next: (data) => {
+        this.planes = data || [];
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener planes:', err);
+        this.planes = [];
+        this.cargando = false;
+      }
     });
   }
 }
