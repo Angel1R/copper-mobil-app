@@ -1,8 +1,11 @@
-from fastapi import FastAPI, HTTPException, Body, Request
+from fastapi import FastAPI, HTTPException, Body, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
 from typing import List
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+import pusher
 
 from models import UserModel, PlanModel
 from database import (
@@ -11,29 +14,71 @@ from database import (
     data_usage_collection
 )
 
-# Inicializar FastAPI
+
+# 🚦 Inicializar FastAPI
 app = FastAPI()
 
-# 🌐 CORS: Permitir accesos desde móviles y entornos de desarrollo
+# 🌐 CORS
 origins = [
-    "capacitor://localhost",            # WebView móvil (APK)
-    "http://localhost",                 # Navegador local
-    "http://localhost:8100",           # Ionic serve
-    "https://copper-mobil-app.onrender.com"  # Producción
+    "capacitor://localhost",
+    "http://localhost",
+    "http://localhost:8100",
+    "https://copper-mobil-app.onrender.com"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,              # No usar "*" si allow_credentials=True
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# 🔐 Cargar variables de entorno desde /api/.env
+load_dotenv(dotenv_path="./api/.env")
 
-# 🔎 Endpoint de salud (opcional)
+# 🚀 Inicializar Pusher
+pusher_client = pusher.Pusher(
+    app_id=os.getenv("PUSHER_APP_ID"),
+    key=os.getenv("PUSHER_KEY"),
+    secret=os.getenv("PUSHER_SECRET"),
+    cluster=os.getenv("PUSHER_CLUSTER"),
+    ssl=True
+)
+
+# 🔁 Función para emitir evento de actualización de planes
+def notificar_planes_actualizados():
+    try:
+        pusher_client.trigger("planes-channel", "planes_actualizados", {"mensaje": "Planes actualizados"})
+    except Exception as e:
+        print("❌ Error al notificar con Pusher:", e)
+
+# 🔎 Endpoint de salud
 @app.get("/")
 def health_check():
     return {"status": "online"}
+
+@app.put("/api/planes/{plan_id}")
+def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
+    try:
+        resultado = plans_collection.update_one(
+            {"_id": ObjectId(plan_id)},
+            {"$set": cambios}
+        )
+
+        if resultado.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Plan no encontrado")
+
+        notificar_planes_actualizados()
+
+        plan_actualizado = plans_collection.find_one({"_id": ObjectId(plan_id)}, {"_id": 0})
+        return {
+            "message": "Plan actualizado correctamente",
+            "plan": plan_actualizado
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar el plan: {e}")
+
 
 # 🟢 Crear usuario
 @app.post("/users/")
@@ -65,13 +110,27 @@ def login_user(data: dict = Body(...)):
         "balance": user["balance"]
     }
 
+# 🆕 Crear nuevo plan y notificar con Pusher
+@app.post("/api/planes")
+def crear_plan(plan: PlanModel):
+    try:
+        plan_data = plan.dict()
+        plans_collection.insert_one(plan_data)
+        notificar_planes_actualizados()
+        return {
+            "message": "Plan creado exitosamente",
+            "plan": plan_data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al guardar el plan: {e}")
+
 # 🟢 Obtener todos los planes
 @app.get("/api/planes", response_model=List[PlanModel])
 def obtener_planes():
     planes = list(plans_collection.find({}, {"_id": 0}))
     return planes
 
-# 🟢 Obtener plan específico de un usuario
+# 🟢 Obtener plan de un usuario
 @app.get("/api/planes/{user_id}")
 def get_user_plan(user_id: str):
     try:
@@ -86,7 +145,7 @@ def get_user_plan(user_id: str):
     except:
         raise HTTPException(status_code=400, detail="ID inválido o error de formato")
 
-# 🟢 Obtener consumo de datos de un usuario
+# 🟢 Obtener consumo de datos
 @app.get("/api/consumo/{user_id}")
 def get_data_usage(user_id: str):
     try:
@@ -96,3 +155,10 @@ def get_data_usage(user_id: str):
         return usage
     except:
         raise HTTPException(status_code=400, detail="ID inválido o error de formato")
+
+# 📋 Middleware para encabezados de depuración
+@app.middleware("http")
+async def log_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Debug-Origin"] = request.headers.get("origin", "no-origin")
+    return response
