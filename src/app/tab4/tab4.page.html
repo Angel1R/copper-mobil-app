@@ -1,4 +1,29 @@
+<ion-content class="ion-padding">
+  <h2>📶 Consumo de datos</h2>
 
-<ion-content [fullscreen]="true">
-  
+  <div *ngIf="!agotado; else agotadoView">
+    <p>
+      <strong>{{ consumoMB }} MB</strong> usados de <strong>{{ limiteMB }} MB</strong>
+    </p>
+
+    <ion-progress-bar [value]="porcentaje / 100" color="primary"></ion-progress-bar>
+    <p>{{ porcentaje | number:'1.0-0' }}% consumido</p>
+
+    <ion-button expand="block" color="tertiary" (click)="consumir()">
+      🔄 Simular consumo
+    </ion-button>
+
+    <ion-item color="warning" *ngIf="advertencia">
+      <ion-label>⚠ ¡Te quedan menos de 1 GB de datos móviles!</ion-label>
+    </ion-item>
+  </div>
+
+  <ng-template #agotadoView>
+    <ion-item color="danger">
+      <ion-label>❌ ¡Tus datos móviles se han agotado!</ion-label>
+    </ion-item>
+    <ion-button expand="block" color="success" (click)="recargarDatos()">
+      💳 Recargar datos
+    </ion-button>
+  </ng-template>
 </ion-content>
