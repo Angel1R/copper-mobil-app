@@ -162,3 +162,12 @@ async def log_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Debug-Origin"] = request.headers.get("origin", "no-origin")
     return response
+
+@app.post("/api/recargas")
+def registrar_recarga(datos: dict = Body(...)):
+    try:
+        # Aquí se podrían guardar en MongoDB si lo deseas
+        print("📲 Recarga simulada:", datos)
+        return {"message": "Recarga simulada con éxito", "datos": datos}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
