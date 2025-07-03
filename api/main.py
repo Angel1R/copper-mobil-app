@@ -11,7 +11,8 @@ from models import UserModel, PlanModel
 from database import (
     users_collection,
     plans_collection,
-    data_usage_collection
+    data_usage_collection,
+    transactions_collection
 )
 
 
@@ -171,3 +172,38 @@ def registrar_recarga(datos: dict = Body(...)):
         return {"message": "Recarga simulada con éxito", "datos": datos}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
+
+
+@app.post("/api/pago/mercadopago")
+def crear_preferencia_pago(plan: dict = Body(...)):
+    try:
+        import requests
+
+        url = "https://api.mercadopago.com/checkout/preferences"
+        headers = {
+            "Authorization": "Bearer TU_TOKEN_DE_ACCESO",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "items": [{
+                "title": plan.get("title", "Plan personalizado"),
+                "quantity": 1,
+                "unit_price": plan.get("price", 100.0)
+            }],
+            "back_urls": {
+                "success": "https://tuapp.com/pago-exitoso",
+                "failure": "https://tuapp.com/pago-fallido"
+            }
+        }
+
+        respuesta = requests.post(url, json=data, headers=headers)
+        resultado = respuesta.json()
+
+        return {
+            "init_point": resultado.get("init_point"),
+            "status": "ok"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}")
