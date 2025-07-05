@@ -178,20 +178,19 @@ def registrar_recarga(datos: dict = Body(...)):
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
-        # 🔁 Elegir token según entorno
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
-
-        # Inicializar SDK
         sdk = mercadopago.SDK(token)
 
-        # Crear preferencia
         preference_data = {
             "items": [{
                 "title": plan.get("title", "Plan personalizado"),
                 "quantity": 1,
                 "unit_price": plan.get("price", 100.0)
             }],
+            "payer": {
+                "email": "test_user_165552454@testuser.com"  #  Email generado automáticamente por Mercado Pago
+            },
             "back_urls": {
                 "success": "https://tuapp.com/pago-exitoso",
                 "failure": "https://tuapp.com/pago-fallido",
