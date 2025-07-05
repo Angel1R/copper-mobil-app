@@ -1,14 +1,19 @@
 <ion-content>
   <ion-list *ngIf="!cargando && planes.length > 0; else estadoCarga">
     <ion-item *ngFor="let plan of planes">
-      <ion-label>
-        <h2>{{ plan.name }} - ${{ plan.price }}</h2>
-        <p>{{ plan.data_limit }} por {{ plan.validity_days }} días</p>
-        <ul>
-          <li *ngFor="let b of plan.benefits">✔ {{ b }}</li>
-        </ul>
-      </ion-label>
-    </ion-item>
+  <ion-label>
+    <h2>{{ plan.name }} - ${{ plan.price }}</h2>
+    <p>{{ plan.data_limit }} por {{ plan.validity_days }} días</p>
+    <ul>
+      <li *ngFor="let b of plan.benefits">✔ {{ b }}</li>
+    </ul>
+  </ion-label>
+
+  <ion-button fill="outline" slot="end" color="success" (click)="iniciarRecarga(plan)">
+    Recargar
+  </ion-button>
+</ion-item>
+
   </ion-list>
 
   <ng-template #estadoCarga>
