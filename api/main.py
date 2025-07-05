@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import pusher
+import mercadopago
 
 from models import UserModel, PlanModel
 from database import (
@@ -177,19 +178,15 @@ def registrar_recarga(datos: dict = Body(...)):
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
-        import requests
-
         # 🔁 Elegir token según entorno
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
 
-        url = "https://api.mercadopago.com/checkout/preferences"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
+        # Inicializar SDK
+        sdk = mercadopago.SDK(token)
 
-        data = {
+        # Crear preferencia
+        preference_data = {
             "items": [{
                 "title": plan.get("title", "Plan personalizado"),
                 "quantity": 1,
@@ -197,15 +194,16 @@ def crear_preferencia_pago(plan: dict = Body(...)):
             }],
             "back_urls": {
                 "success": "https://tuapp.com/pago-exitoso",
-                "failure": "https://tuapp.com/pago-fallido"
-            }
+                "failure": "https://tuapp.com/pago-fallido",
+                "pending": "https://tuapp.com/pago-pendiente"
+            },
+            "auto_return": "approved"
         }
 
-        respuesta = requests.post(url, json=data, headers=headers)
-        resultado = respuesta.json()
+        preference = sdk.preference().create(preference_data)["response"]
 
         return {
-            "init_point": resultado.get("init_point"),
+            "init_point": preference.get("init_point"),
             "status": "ok"
         }
 
