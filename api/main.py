@@ -185,7 +185,7 @@ def registrar_recarga(datos: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
 
 
-''' @app.post("/api/pago/mercadopago")
+@app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
         env = os.getenv("MP_ENV", "sandbox")
@@ -218,4 +218,3 @@ def crear_preferencia_pago(plan: dict = Body(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}")
- '''
