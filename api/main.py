@@ -179,9 +179,13 @@ def crear_preferencia_pago(plan: dict = Body(...)):
     try:
         import requests
 
+        # 🔁 Elegir token según entorno
+        env = os.getenv("MP_ENV", "sandbox")
+        token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
+
         url = "https://api.mercadopago.com/checkout/preferences"
         headers = {
-            "Authorization": "Bearer TU_TOKEN_DE_ACCESO",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
 
