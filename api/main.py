@@ -35,10 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# 🔐 Cargar variables de entorno desde /api/.env
+# Cargar variables de entorno desde /api/.env
 load_dotenv(dotenv_path="./api/.env")
 
-# 🚀 Inicializar Pusher
+# Inicializar Pusher
 pusher_client = pusher.Pusher(
     app_id=os.getenv("PUSHER_APP_ID"),
     key=os.getenv("PUSHER_KEY"),
@@ -47,14 +47,14 @@ pusher_client = pusher.Pusher(
     ssl=True
 )
 
-# 🔁 Función para emitir evento de actualización de planes
+# Función para emitir evento de actualización de planes
 def notificar_planes_actualizados():
     try:
         pusher_client.trigger("planes-channel", "planes_actualizados", {"mensaje": "Planes actualizados"})
     except Exception as e:
-        print("❌ Error al notificar con Pusher:", e)
+        print(" Error al notificar con Pusher:", e)
 
-# 🔎 Endpoint de salud
+# Endpoint de salud
 @app.get("/")
 def health_check():
     return {"status": "online"}
@@ -82,7 +82,7 @@ def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error al actualizar el plan: {e}")
 
 
-# 🟢 Crear usuario
+# Crear usuario
 @app.post("/users/")
 def create_user(user: UserModel):
     user_data = user.dict()
@@ -94,7 +94,7 @@ def create_user(user: UserModel):
         "data": user_data
     }
 
-# 🟢 Login de usuario
+# Login de usuario
 @app.post("/auth/login")
 def login_user(data: dict = Body(...)):
     phone = data.get("phone")
@@ -112,7 +112,7 @@ def login_user(data: dict = Body(...)):
         "balance": user["balance"]
     }
 
-# 🆕 Crear nuevo plan y notificar con Pusher
+# Crear nuevo plan y notificar con Pusher
 @app.post("/api/planes")
 def crear_plan(plan: PlanModel):
     try:
@@ -126,13 +126,13 @@ def crear_plan(plan: PlanModel):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar el plan: {e}")
 
-# 🟢 Obtener todos los planes
+# Obtener todos los planes
 @app.get("/api/planes", response_model=List[PlanModel])
 def obtener_planes():
     planes = list(plans_collection.find({}, {"_id": 0}))
     return planes
 
-# 🟢 Obtener plan de un usuario
+# Obtener plan de un usuario
 @app.get("/api/planes/{user_id}")
 def get_user_plan(user_id: str):
     try:
@@ -147,7 +147,7 @@ def get_user_plan(user_id: str):
     except:
         raise HTTPException(status_code=400, detail="ID inválido o error de formato")
 
-# 🟢 Obtener consumo de datos
+# Obtener consumo de datos
 @app.get("/api/consumo/{user_id}")
 def get_data_usage(user_id: str):
     try:
@@ -158,7 +158,7 @@ def get_data_usage(user_id: str):
     except:
         raise HTTPException(status_code=400, detail="ID inválido o error de formato")
 
-# 📋 Middleware para encabezados de depuración
+#  Middleware para encabezados de depuración
 @app.middleware("http")
 async def log_headers(request: Request, call_next):
     response = await call_next(request)
@@ -179,12 +179,13 @@ def registrar_recarga(datos: dict = Body(...)):
 def registrar_recarga(datos: dict = Body(...)):
     try:
         # Aquí se podrían guardar en MongoDB si lo deseas
-        print("📲 Recarga simulada:", datos)
+        print(" Recarga simulada:", datos)
         return {"message": "Recarga simulada con éxito", "datos": datos}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
 
 
+# MERCADOPAGO
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
@@ -202,9 +203,9 @@ def crear_preferencia_pago(plan: dict = Body(...)):
                 "email": "test_user_165552454@testuser.com"  #  Email generado automáticamente por Mercado Pago
             },
             "back_urls": {
-                "success": "https://tuapp.com/pago-exitoso",
-                "failure": "https://tuapp.com/pago-fallido",
-                "pending": "https://tuapp.com/pago-pendiente"
+                "success": "coppermobil://pago-exitoso",
+                "failure": "coppermobil://pago-fallido",
+                "pending": "coppermobil://pago-pendiente"
             },
             "auto_return": "approved"
         }
@@ -218,3 +219,29 @@ def crear_preferencia_pago(plan: dict = Body(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}")
+
+@app.get("/api/pago/validar")
+def validar_pago(request: Request):
+    try:
+        env = os.getenv("MP_ENV", "sandbox")
+        token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
+        sdk = mercadopago.SDK(token)
+
+        params = dict(request.query_params)
+        payment_id = params.get("payment_id")
+
+        if not payment_id:
+            return {"message": "Falta payment_id", "approved": False}
+
+        pago = sdk.payment().get(payment_id)["response"]
+
+        return {
+            "payment_id": pago.get("id"),
+            "status": pago.get("status"),
+            "status_detail": pago.get("status_detail"),
+            "amount": pago.get("transaction_amount"),
+            "approved": pago.get("status") == "approved"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al validar el pago: {e}")
