@@ -189,18 +189,27 @@ def registrar_recarga(datos: dict = Body(...)):
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
+        # Obtener entorno y token
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
+        print("🔑 TOKEN EN USO:", repr(token))
+
+        # Validar que el token exista y sea string
+        if not isinstance(token, str) or not token.strip():
+            raise ValueError("Access token no definido o no válido")
+
+        # Inicializar SDK
         sdk = mercadopago.SDK(token)
 
+        # Datos de la preferencia
         preference_data = {
             "items": [{
                 "title": plan.get("title", "Plan personalizado"),
                 "quantity": 1,
-                "unit_price": plan.get("price", 100.0)
+                "unit_price": float(plan.get("price", 100.0))
             }],
             "payer": {
-                "email": "test_user_165552454@testuser.com"  #  Email generado automáticamente por Mercado Pago
+                "email": "test_user_165552454@testuser.com"  # Usuario de prueba
             },
             "back_urls": {
                 "success": "coppermobil://pago-exitoso",
@@ -210,7 +219,9 @@ def crear_preferencia_pago(plan: dict = Body(...)):
             "auto_return": "approved"
         }
 
-        preference = sdk.preference().create(preference_data)["response"]
+        # Crear preferencia
+        preference_response = sdk.preference().create(preference_data)
+        preference = preference_response.get("response", {})
 
         return {
             "init_point": preference.get("init_point"),
