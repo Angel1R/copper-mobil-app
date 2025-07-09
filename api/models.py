@@ -1,15 +1,16 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, EmailStr, Field
+from typing import Literal, List, Optional
 from datetime import datetime
 
 # Modelo para Usuarios
 class UserModel(BaseModel):
-    phone: str
-    password: str
+    phone: str = Field(..., min_length=10)
+    password: str = Field(..., min_length=6)
     name: str
-    balance: float
+    email: EmailStr
+    balance: float = 0.0
     plan: str
-    transactions: List[str]
+    transactions: List[str] = []
     createdAt: datetime
 
 # Modelo para Planes
@@ -23,9 +24,12 @@ class PlanModel(BaseModel):
 # Modelo para Transacciones
 class TransactionModel(BaseModel):
     userId: str
-    type: str
+    type: Literal["recarga", "pago", "ajuste"]  # Puedes agregar más tipos si expandes funciones
     amount: float
-    paymentMethod: str
+    paymentMethod: Literal["mercadopago", "paypal", "oxxo", "efectivo"]
+    status: Literal["approved", "pending", "rejected", "error"]
+    paymentId: Optional[str] = None  # ID que devuelve Mercado Pago
+    reference: Optional[str] = None  # Para OXXO u otras referencias si aplica
     date: datetime
 
 # Modelo para Consumo de Datos

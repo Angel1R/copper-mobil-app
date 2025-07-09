@@ -85,22 +85,42 @@ def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
 # Crear usuario
 @app.post("/users/")
 def create_user(user: UserModel):
+    # Validar existencia de teléfono o correo
+    if users_collection.find_one({"phone": user.phone}):
+        raise HTTPException(status_code=400, detail="El número de teléfono ya está registrado")
+    if users_collection.find_one({"email": user.email}):
+        raise HTTPException(status_code=400, detail="El correo ya está registrado")
+
     user_data = user.dict()
     user_data["createdAt"] = datetime.utcnow()
+
     inserted_user = users_collection.insert_one(user_data)
+
     return {
         "message": "Usuario creado con éxito",
         "user_id": str(inserted_user.inserted_id),
-        "data": user_data
+        "data": {
+            "name": user.name,
+            "phone": user.phone,
+            "email": user.email,
+            "plan": user.plan,
+            "balance": user.balance
+        }
     }
 
 # Login de usuario
 @app.post("/auth/login")
 def login_user(data: dict = Body(...)):
-    phone = data.get("phone")
+    login_id = data.get("login")  # puede ser phone o email
     password = data.get("password")
 
-    user = users_collection.find_one({"phone": phone})
+    if not login_id or not password:
+        raise HTTPException(status_code=400, detail="Faltan datos de login")
+
+    user = users_collection.find_one({
+        "$or": [{"phone": login_id}, {"email": login_id}]
+    })
+
     if not user or user["password"] != password:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
@@ -109,7 +129,8 @@ def login_user(data: dict = Body(...)):
         "user_id": str(user["_id"]),
         "name": user["name"],
         "plan": user["plan"],
-        "balance": user["balance"]
+        "balance": user["balance"],
+        "email": user["email"]
     }
 
 # Crear nuevo plan y notificar con Pusher
@@ -175,7 +196,8 @@ def registrar_recarga(datos: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
 
 
-@app.post("/api/recargas")
+# Simulación de recarga
+''' @app.post("/api/recargas")
 def registrar_recarga(datos: dict = Body(...)):
     try:
         # Aquí se podrían guardar en MongoDB si lo deseas
@@ -183,25 +205,42 @@ def registrar_recarga(datos: dict = Body(...)):
         return {"message": "Recarga simulada con éxito", "datos": datos}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
-
+ '''
 
 # MERCADOPAGO
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
-        # Obtener entorno y token
+        # 1. Obtener entorno y token
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
-        print("🔑 TOKEN EN USO:", repr(token))
 
-        # Validar que el token exista y sea string
+        print("🔑 TOKEN EN USO:", repr(token))
+        print("🌎 Entorno:", env)
+
+        # 2. Validar token
         if not isinstance(token, str) or not token.strip():
             raise ValueError("Access token no definido o no válido")
 
-        # Inicializar SDK
+        # 3. Obtener email dinámico
+        if env == "sandbox":
+            payer_email = "test_user_123456@testuser.com"
+        else:
+            user_id = plan.get("user_id")
+            if not user_id:
+                raise HTTPException(status_code=400, detail="Falta user_id")
+            
+            usuario = users_collection.find_one({"_id": ObjectId(user_id)})
+            if not usuario or "email" not in usuario:
+                raise HTTPException(status_code=404, detail="Usuario no encontrado o sin email")
+
+            payer_email = usuario["email"]
+
+        print("📧 Email asignado:", payer_email)
+
+        # 4. Inicializar SDK y armar preferencia
         sdk = mercadopago.SDK(token)
 
-        # Datos de la preferencia
         preference_data = {
             "items": [{
                 "title": plan.get("title", "Plan personalizado"),
@@ -209,7 +248,7 @@ def crear_preferencia_pago(plan: dict = Body(...)):
                 "unit_price": float(plan.get("price", 100.0))
             }],
             "payer": {
-                "email": "test_user_165552454@testuser.com"  # Usuario de prueba
+                "email": payer_email
             },
             "back_urls": {
                 "success": "coppermobil://pago-exitoso",
@@ -219,7 +258,6 @@ def crear_preferencia_pago(plan: dict = Body(...)):
             "auto_return": "approved"
         }
 
-        # Crear preferencia
         preference_response = sdk.preference().create(preference_data)
         preference = preference_response.get("response", {})
 
