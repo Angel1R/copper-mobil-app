@@ -11,7 +11,7 @@ class UserModel(BaseModel):
     balance: float = 0.0
     plan: str
     transactions: List[str] = []
-    createdAt: datetime
+    createdAt: Optional[datetime]
 
 # Modelo para Planes
 class PlanModel(BaseModel):

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Body, Request, Path
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
+from bson.objectid import ObjectId
 from typing import List
 from datetime import datetime
 import os
@@ -111,7 +112,7 @@ def create_user(user: UserModel):
 # Login de usuario
 @app.post("/api/auth/login")
 def login_user(data: dict = Body(...)):
-    login_id = data.get("login")  # puede ser phone o email
+    login_id = data.get("login")  # puede ser teléfono o correo
     password = data.get("password")
 
     if not login_id or not password:
@@ -121,18 +122,26 @@ def login_user(data: dict = Body(...)):
         "$or": [{"phone": login_id}, {"email": login_id}]
     })
 
-    if not user or user["password"] != password:
+    if not user or user.get("password") != password:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+
+    # Validación de integridad del usuario
+    for campo in ["name", "email", "plan", "balance"]:
+        if campo not in user:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Campo faltante en el usuario: {campo}"
+            )
 
     return {
         "message": "Inicio de sesión exitoso",
         "user_id": str(user["_id"]),
         "name": user["name"],
+        "email": user["email"],
         "plan": user["plan"],
-        "balance": user["balance"],
-        "email": user["email"]
+        "balance": user["balance"]
     }
-
+    
 # Crear nuevo plan y notificar con Pusher
 @app.post("/api/planes")
 def crear_plan(plan: PlanModel):
