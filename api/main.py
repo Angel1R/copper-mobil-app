@@ -83,7 +83,7 @@ def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
 
 
 # Crear usuario
-@app.post("/users/")
+@app.post("api/users/")
 def create_user(user: UserModel):
     # Validar existencia de teléfono o correo
     if users_collection.find_one({"phone": user.phone}):
@@ -109,7 +109,7 @@ def create_user(user: UserModel):
     }
 
 # Login de usuario
-@app.post("/auth/login")
+@app.post("api/auth/login")
 def login_user(data: dict = Body(...)):
     login_id = data.get("login")  # puede ser phone o email
     password = data.get("password")
