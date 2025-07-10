@@ -1,9 +1,9 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Literal, List, Optional
 from datetime import datetime
-
-# Modelo para Usuarios
-class UserModel(BaseModel):
+    
+# Modelo de entrada
+class UserInput(BaseModel):
     phone: str = Field(..., min_length=10)
     password: str = Field(..., min_length=6)
     name: str
@@ -11,7 +11,19 @@ class UserModel(BaseModel):
     balance: float = 0.0
     plan: str
     transactions: List[str] = []
+
+# Modelo para Usuarios
+class UserModel(UserInput):
     createdAt: Optional[datetime]
+
+# Modelo de respuesta hacia el frontend
+class UserResponse(BaseModel):
+    user_id: str
+    name: str
+    phone: str
+    email: EmailStr
+    balance: float
+    plan: str
 
 # Modelo para Planes
 class PlanModel(BaseModel):

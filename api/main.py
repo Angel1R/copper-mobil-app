@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import pusher
 import mercadopago
 
-from models import UserModel, PlanModel
+from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, FAQModel
 from database import (
     users_collection,
     plans_collection,
@@ -84,30 +84,28 @@ def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
 
 
 # Crear usuario
-@app.post("/api/users/")
-def create_user(user: UserModel):
-    # Validar existencia de teléfono o correo
+@app.post("/api/users/", response_model=UserResponse)
+def create_user(user: UserInput):
+    # Validar duplicados
     if users_collection.find_one({"phone": user.phone}):
         raise HTTPException(status_code=400, detail="El número de teléfono ya está registrado")
     if users_collection.find_one({"email": user.email}):
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
 
+    # Preparar documento con fecha
     user_data = user.dict()
     user_data["createdAt"] = datetime.utcnow()
 
     inserted_user = users_collection.insert_one(user_data)
 
-    return {
-        "message": "Usuario creado con éxito",
-        "user_id": str(inserted_user.inserted_id),
-        "data": {
-            "name": user.name,
-            "phone": user.phone,
-            "email": user.email,
-            "plan": user.plan,
-            "balance": user.balance
-        }
-    }
+    return UserResponse(
+        user_id=str(inserted_user.inserted_id),
+        name=user.name,
+        phone=user.phone,
+        email=user.email,
+        balance=user.balance,
+        plan=user.plan
+    )
 
 # Login de usuario
 @app.post("/api/auth/login")
