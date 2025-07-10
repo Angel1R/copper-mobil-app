@@ -14,7 +14,8 @@ from database import (
     users_collection,
     plans_collection,
     data_usage_collection,
-    transactions_collection
+    transactions_collection,
+    faq_collection
 )
 
 
@@ -301,3 +302,24 @@ def validar_pago(request: Request):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al validar el pago: {e}")
+    
+# Preguntas frecuentas (FAQ)
+@app.get("/api/faq", response_model=List[FAQModel])
+def obtener_faq():
+    try:
+        faq = list(faq_collection.find({}, {"_id": 0}))
+        return faq
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener FAQs: {e}")
+    
+@app.post("/api/faq")
+def crear_faq(pregunta: FAQModel):
+    try:
+        faq_collection.insert_one(pregunta.dict())
+        return {
+            "message": "Pregunta agregada con éxito",
+            "faq": pregunta
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al guardar la FAQ: {e}")
+    
