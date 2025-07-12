@@ -326,7 +326,7 @@ def crear_faq(pregunta: FAQModel):
     
 # Soporte
 @app.post("/api/soporte")
-def crear_ticket(ticket: dict = Body(...)):
+async def crear_ticket(ticket: dict = Body(...)):
     try:
         user_id = ticket.get("userId")
         issue = ticket.get("issue")
@@ -334,22 +334,34 @@ def crear_ticket(ticket: dict = Body(...)):
         if not user_id or not issue:
             raise HTTPException(status_code=400, detail="Datos incompletos para el ticket")
 
+        # Asegurarse que createdAt es una cadena
+        creado = datetime.utcnow().isoformat()
         ticket_data = {
             "userId": user_id,
             "issue": issue,
             "status": "pendiente",
-            "createdAt": datetime.utcnow().isoformat()
+            "createdAt": creado
         }
 
         support_tickets_collection.insert_one(ticket_data)
 
+        # Envolver respuesta en dict plano para evitar errores de serialización
         return {
             "message": "Ticket creado exitosamente",
-            "ticket": ticket_data
+            "ticket": {
+                "userId": user_id,
+                "issue": issue,
+                "status": "pendiente",
+                "createdAt": creado
+            }
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
+        print("❌ Error interno:", e)
+        return {
+            "message": "No se pudo crear el ticket",
+            "error": str(e)
+        }
     
 @app.get("/api/soporte/{user_id}")
 def obtener_historial_tickets(user_id: str):
