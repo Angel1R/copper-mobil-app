@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import pusher
 import mercadopago
 
-from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, FAQModel
+from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, TicketDB, TicketInput, FAQModel
 from database import (
     users_collection,
     plans_collection,
@@ -339,20 +339,19 @@ def crear_ticket(ticket: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
 
-@app.get("/api/soporte/{user_id}")
-def obtener_tickets_usuario(user_id: str):
+@app.post("/api/soporte", response_model=TicketDB)
+def crear_ticket(ticket: TicketInput):
     try:
-        tickets = list(support_tickets_collection.find(
-            { "userId": user_id },
-            { "_id": 0 }
-        ))
-
-        if not tickets:
-            return { "message": "Este usuario no tiene tickets registrados", "tickets": [] }
-
-        return { "tickets": tickets }
+        ticket_data = {
+            **ticket.dict(),
+            "status": "pendiente",
+            "createdAt": datetime.utcnow()
+        }
+        support_tickets_collection.insert_one(ticket_data)
+        return ticket_data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al consultar tickets: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
+
 
     
     

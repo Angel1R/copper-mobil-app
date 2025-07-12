@@ -55,6 +55,14 @@ class SupportTicketModel(BaseModel):
     issue: str
     status: str
     createdAt: datetime
+    
+class TicketInput(BaseModel):
+    userId: str
+    issue: str
+
+class TicketDB(SupportTicketModel):
+    pass
+
 
 # Modelo para Preguntas Frecuentes (FAQ)
 class FAQModel(BaseModel):
