@@ -328,30 +328,26 @@ def crear_faq(pregunta: FAQModel):
 @app.post("/api/soporte")
 def crear_ticket(ticket: dict = Body(...)):
     try:
-        if "userId" not in ticket or "issue" not in ticket:
+        user_id = ticket.get("userId")
+        issue = ticket.get("issue")
+
+        if not user_id or not issue:
             raise HTTPException(status_code=400, detail="Datos incompletos para el ticket")
 
-        ticket["status"] = "pendiente"
-        ticket["createdAt"] = datetime.utcnow()
-        support_tickets_collection.insert_one(ticket)
-
-        return { "message": "Ticket creado exitosamente", "ticket": ticket }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
-
-@app.post("/api/soporte")
-def crear_ticket(ticket: TicketInput):
-    try:
         ticket_data = {
-            **ticket.dict(),
+            "userId": user_id,
+            "issue": issue,
             "status": "pendiente",
-            "createdAt": datetime.utcnow()
+            "createdAt": datetime.utcnow().isoformat()
         }
+
         support_tickets_collection.insert_one(ticket_data)
 
-        # Convertir a ISO para evitar error al serializar
-        ticket_data["createdAt"] = ticket_data["createdAt"].isoformat()
-        return ticket_data
+        return {
+            "message": "Ticket creado exitosamente",
+            "ticket": ticket_data
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
     

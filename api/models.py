@@ -54,7 +54,7 @@ class SupportTicketModel(BaseModel):
     userId: str
     issue: str
     status: str
-    createdAt: datetime
+    createdAt: Optional[datetime]
     
 class TicketInput(BaseModel):
     userId: str
