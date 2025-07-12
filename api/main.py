@@ -13,6 +13,7 @@ from models import UserModel, PlanModel, UserInput, UserResponse, TransactionMod
 from database import (
     users_collection,
     plans_collection,
+    support_tickets_collection,
     data_usage_collection,
     transactions_collection,
     faq_collection
@@ -322,4 +323,15 @@ def crear_faq(pregunta: FAQModel):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al guardar la FAQ: {e}")
+    
+# Soporte
+@app.post("/api/soporte")
+def crear_ticket(ticket: SupportTicketModel):
+    try:
+        ticket_data = ticket.dict()
+        ticket_data["createdAt"] = datetime.utcnow()
+        support_tickets_collection.insert_one(ticket_data)
+        return { "message": "Ticket creado exitosamente", "ticket": ticket_data }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
     
