@@ -326,12 +326,43 @@ def crear_faq(pregunta: FAQModel):
     
 # Soporte
 @app.post("/api/soporte")
-def crear_ticket(ticket: SupportTicketModel):
+def crear_ticket(ticket: dict = Body(...)):
     try:
-        ticket_data = ticket.dict()
-        ticket_data["createdAt"] = datetime.utcnow()
-        support_tickets_collection.insert_one(ticket_data)
-        return { "message": "Ticket creado exitosamente", "ticket": ticket_data }
+        if "userId" not in ticket or "issue" not in ticket:
+            raise HTTPException(status_code=400, detail="Datos incompletos para el ticket")
+
+        ticket["status"] = "pendiente"
+        ticket["createdAt"] = datetime.utcnow()
+        support_tickets_collection.insert_one(ticket)
+
+        return { "message": "Ticket creado exitosamente", "ticket": ticket }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
+
+@app.get("/api/soporte/{user_id}")
+def obtener_tickets_usuario(user_id: str):
+    try:
+        tickets = list(support_tickets_collection.find(
+            { "userId": user_id },
+            { "_id": 0 }
+        ))
+
+        if not tickets:
+            return { "message": "Este usuario no tiene tickets registrados", "tickets": [] }
+
+        return { "tickets": tickets }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al consultar tickets: {e}")
+
     
+    
+# Endpoint para depurar CORS
+@app.get("/api/debug")
+def debug_cors(request: Request):
+    return {
+        "method": request.method,
+        "url": str(request.url),
+        "headers": dict(request.headers),
+        "origin": request.headers.get("origin"),
+        "host": request.headers.get("host")
+    }
