@@ -1,0 +1,19 @@
+ion-label.respuesta p {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  margin: 0;
+  padding-left: 16px;
+}
+
+.respuesta-expandida {
+  max-height: 300px;
+  opacity: 1;
+  transition: max-height 300ms ease, opacity 300ms ease;
+  overflow: hidden;
+}
+.respuesta-colapsada {
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 300ms ease, opacity 300ms ease;
+  overflow: hidden;
+}

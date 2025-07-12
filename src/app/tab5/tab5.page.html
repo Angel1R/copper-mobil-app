@@ -1,4 +1,93 @@
+<ion-content>
 
-<ion-content [fullscreen]="true">
-  
+  <!-- Preguntas frecuentes -->
+  <ion-list>
+    <ng-container *ngFor="let item of faq">
+      <ion-item button detail lines="inset" (click)="item.abierto = !item.abierto">
+        <ion-label><h3>{{ item.question }}</h3></ion-label>
+      </ion-item>
+
+      <div [ngClass]="{ 'respuesta-expandida': item.abierto, 'respuesta-colapsada': !item.abierto }">
+        <ion-item lines="none">
+          <ion-label class="respuesta">
+            <p>{{ item.answer }}</p>
+          </ion-label>
+        </ion-item>
+      </div>
+    </ng-container>
+  </ion-list>
+
+  <!-- Campo para enviar ticket -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>¿Tienes otra duda?</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-textarea
+        [(ngModel)]="nuevaDuda"
+        placeholder="Escribe tu pregunta aquí..."
+        rows="4"
+        autoGrow="true">
+      </ion-textarea>
+      <ion-button expand="block" color="primary" (click)="enviarTicket()">
+        Enviar Ticket
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Botón para mostrar historial -->
+  <ion-button expand="block" fill="outline" color="medium" (click)="mostrarHistorial = !mostrarHistorial">
+    {{ mostrarHistorial ? 'Ocultar historial de soporte' : 'Ver historial de soporte' }}
+  </ion-button>
+
+  <!-- Filtros -->
+  <div *ngIf="mostrarHistorial && tickets.length > 0" style="padding: 0 16px;">
+    <ion-item>
+      <ion-label>Estado</ion-label>
+      <ion-select [(ngModel)]="filtroEstado" interface="popover">
+        <ion-select-option value="todos">Todos</ion-select-option>
+        <ion-select-option value="pendiente">Pendientes</ion-select-option>
+        <ion-select-option value="resuelto">Resueltos</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Orden</ion-label>
+      <ion-select [(ngModel)]="ordenTicket" interface="popover">
+        <ion-select-option value="recientes">Más recientes</ion-select-option>
+        <ion-select-option value="antiguos">Más antiguos</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </div>
+
+  <!-- Historial de tickets -->
+  <ion-card *ngIf="mostrarHistorial && ticketsFiltrados.length > 0">
+    <ion-card-header>
+      <ion-card-title>📜 Historial de soporte</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let t of ticketsFiltrados">
+          <ion-label>
+            <h4>{{ t.issue }}</h4>
+            <p style="font-size: 13px; color: gray;">
+              Estado:
+              <strong [style.color]="t.status === 'resuelto' ? 'green' : 'orange'">
+                {{ t.status === 'resuelto' ? '✅ Resuelto' : '⏳ Pendiente' }}
+              </strong>
+              |
+              {{ t.createdAt | date:'medium' }}
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="mostrarHistorial && ticketsFiltrados.length === 0">
+    <ion-card-content style="text-align: center; color: gray;">
+      No hay tickets para ese filtro.
+    </ion-card-content>
+  </ion-card>
+
 </ion-content>
