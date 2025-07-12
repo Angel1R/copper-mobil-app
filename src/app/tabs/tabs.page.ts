@@ -32,13 +32,6 @@ export class TabsPage implements OnInit {
     this.menuCtrl.toggle();
   }
 
-  // Acción de cierre de sesión y redirección al login
-  logout() {
-    console.log('Cerrando sesión...');
-    this.menuCtrl.close();
-    this.navCtrl.navigateForward('/login');
-  }
-
   // Navega a la pantalla de perfil y oculta las tabs antes del cambio
   goToProfile() {
     this.showTabs = false; // Oculta las tabs antes de cambiar de pantalla
