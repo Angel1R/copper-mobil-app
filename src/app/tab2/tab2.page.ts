@@ -3,6 +3,7 @@ import { Http } from '@capacitor-community/http';
 import { environment } from 'src/environments/environment';
 import Pusher, { Channel } from 'pusher-js';
 import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app'; // Para capturar deep links
 
 @Component({
   selector: 'app-tab2',
@@ -19,7 +20,35 @@ export class Tab2Page implements OnInit, OnDestroy {
   async ngOnInit() {
     await this.obtenerPlanes();
     this.iniciarPusher();
-    localStorage.setItem('user_id', '684c3d33b552d9ab86f0250c');
+    this.configurarDeepLinks();
+    // ❌ Eliminar simulación — ya se guarda en login
+  }
+
+  configurarDeepLinks() {
+    App.addListener('appUrlOpen', async ({ url }) => {
+      console.log('🔗 Deep link recibido:', url);
+
+      const parsed = new URL(url);
+      const ruta = parsed.pathname;
+      const paymentId = parsed.searchParams.get('payment_id');
+
+      if (ruta === '/pago-exitoso' && paymentId) {
+        const response = await Http.get({
+          url: `${environment.apiUrl}/pago/validar`,
+          params: { payment_id: paymentId }
+        });
+
+        if (response.data.approved) {
+          alert('✅ Recarga confirmada con éxito');
+        } else {
+          alert('⚠️ El pago no fue aprobado');
+        }
+      } else if (ruta === '/pago-fallido') {
+        alert('❌ El pago fue rechazado');
+      } else if (ruta === '/pago-pendiente') {
+        alert('⏳ El pago está pendiente');
+      }
+    });
   }
 
   async obtenerPlanes() {
@@ -56,34 +85,46 @@ export class Tab2Page implements OnInit, OnDestroy {
     });
   }
 
-async iniciarRecarga(plan: any) {
-  const confirmar = confirm(`¿Confirmar pago por $${plan.price} para el plan ${plan.name}?`);
-  if (!confirmar) return;
+  async iniciarRecarga(plan: any) {
+    const userId = localStorage.getItem('user_id');
 
-  try {
-    const response = await Http.post({
-      url: `${environment.apiUrl}/recargas`,
-      headers: { 'Content-Type': 'application/json' },
-      data: {
-        planId: plan._id,
-        monto: plan.price,
-        fecha: new Date().toISOString()
+    if (!userId || userId.length < 10) {
+      alert('⚠️ Debes iniciar sesión correctamente para hacer una recarga');
+      return;
+    }
+
+    const payload = {
+      title: plan.name,
+      price: plan.price,
+      user_id: userId
+    };
+
+    console.log('📦 Enviando datos al backend:', payload);
+
+    try {
+      const response = await Http.post({
+        url: `${environment.apiUrl}/pago/mercadopago`,
+        headers: { 'Content-Type': 'application/json' },
+        data: payload
+      });
+
+      const initPoint = response.data?.init_point;
+      console.log('🔍 Resultado completo:', response.data);
+
+      if (initPoint) {
+        await Browser.open({ url: initPoint });
+      } else {
+        alert('No se pudo generar el enlace de pago');
       }
-    });
 
-    alert('✅ Recarga exitosa');
-    console.log('[💾] Recarga registrada:', response.data);
-  } catch (error) {
-    console.error('❌ Error al registrar recarga:', error);
-    alert('Hubo un problema al procesar la recarga.');
+    } catch (error: any) {
+      console.error('❌ Error al iniciar pago:', error);
+      alert(error?.error?.detail || 'Hubo un problema al contactar con el sistema de pagos');
+    }
   }
-}
-
 
   ngOnDestroy() {
     this.canal?.unbind_all();
     this.pusher?.disconnect();
   }
-
-  
 }
