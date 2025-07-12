@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Http } from '@capacitor-community/http';
 import { NavController } from '@ionic/angular';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -8,33 +11,55 @@ import { NavController } from '@ionic/angular';
   standalone: false
 })
 export class LoginPage {
-  // Variables para almacenar los datos ingresados por el usuario
-  phoneNumber: string = ''; // Número de teléfono ingresado
-  password: string = '';    // Contraseña ingresada
+  form: FormGroup;
 
-  constructor(private navCtrl: NavController) {}
-
-  // Validación del número de teléfono y contraseña
-  get isValidLogin(): boolean {
-    return this.phoneNumber.replace(/\D/g, '').length === 10 && this.password.length > 0;  
-    // Verifica que el número tenga 10 dígitos y que la contraseña no esté vacía
+  constructor(private fb: FormBuilder, private navCtrl: NavController) {
+    this.form = this.fb.group({
+      login: ['', [Validators.required, Validators.minLength(5)]],  // puedes ajustar mínimo si usas correo
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
   }
 
-  // Función para iniciar sesión
-  login() {
-    // Elimina cualquier carácter que no sea numérico del número de teléfono
-    this.phoneNumber = this.phoneNumber.replace(/\D/g, '');
-
-    if (this.isValidLogin) {
-      console.log('Inicio de sesión exitoso.');
-      this.navCtrl.navigateForward('/tabs'); // Redirige al usuario a las pestañas principales
-    } else {
-      console.log('Datos inválidos.');
+  async iniciarSesion() {
+    if (!this.form.valid) {
+      alert('⚠️ Por favor completa todos los campos correctamente');
+      return;
     }
-  }
 
-  // Función para redirigir al usuario al registro si no tiene cuenta
-  goToRegister() {
-    this.navCtrl.navigateForward('/registro');
+    try {
+      const response = await Http.post({
+        url: `${environment.apiUrl}/auth/login`,
+        headers: { 'Content-Type': 'application/json' },
+        data: this.form.value
+      });
+
+      // Verificamos si el backend respondió correctamente
+      if (response?.status === 200 && response.data?.user_id) {
+        const { user_id, name, email, balance } = response.data;
+        localStorage.setItem('user_id', user_id);
+        localStorage.setItem('user_name', name);
+        localStorage.setItem('user_email', email);
+        localStorage.setItem('user_balance', balance.toString());
+
+        alert(`👋 Bienvenido ${name}`);
+        this.navCtrl.navigateRoot('/tabs/tab2');
+      } else {
+        throw response;
+      }
+
+    } catch (error: any) {
+      const detalle = error?.error?.detail || '';
+      let mensaje: string;
+
+      if (detalle.includes('Credenciales inválidas')) {
+        mensaje = '🔐 Usuario o contraseña incorrecta';
+      } else if (error.status === 422) {
+        mensaje = '⚠️ Verifica el formato de los datos ingresados';
+      } else {
+        mensaje = detalle || '❌ No se pudo iniciar sesión';
+      }
+
+      alert(mensaje);
+    }
   }
 }
