@@ -339,7 +339,7 @@ def crear_ticket(ticket: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
 
-@app.post("/api/soporte", response_model=TicketDB)
+@app.post("/api/soporte")
 def crear_ticket(ticket: TicketInput):
     try:
         ticket_data = {
@@ -348,11 +348,34 @@ def crear_ticket(ticket: TicketInput):
             "createdAt": datetime.utcnow()
         }
         support_tickets_collection.insert_one(ticket_data)
+
+        # Convertir a ISO para evitar error al serializar
+        ticket_data["createdAt"] = ticket_data["createdAt"].isoformat()
         return ticket_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear ticket de soporte: {e}")
-
-
+    
+@app.get("/api/soporte/{user_id}")
+def obtener_historial_tickets(user_id: str):
+    try:
+        tickets = list(support_tickets_collection.find({"userId": user_id}, {"_id": 0}))
+        return {"tickets": tickets}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener tickets: {e}")
+    
+@app.put("/api/soporte/{ticket_id}")
+def actualizar_estado_ticket(ticket_id: str, cambios: dict = Body(...)):
+    try:
+        resultado = support_tickets_collection.update_one(
+            {"_id": ObjectId(ticket_id)},
+            {"$set": cambios}
+        )
+        if resultado.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Ticket no encontrado")
+        return {"message": "Ticket actualizado correctamente"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar el ticket: {e}")
+    
     
     
 # Endpoint para depurar CORS
