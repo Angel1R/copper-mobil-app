@@ -1,4 +1,7 @@
 import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Http } from '@capacitor-community/http';
+import { environment } from 'src/environments/environment';
 import { NavController } from '@ionic/angular';
 
 @Component({
@@ -8,53 +11,63 @@ import { NavController } from '@ionic/angular';
   standalone: false
 })
 export class RegistroPage {
-  // Variables para almacenar los datos ingresados por el usuario
-  phoneNumber: string = ''; // Número de teléfono (solo números, máximo 10 dígitos)
-  password: string = '';    // Contraseña ingresada por el usuario
-  verificationCode: string = ''; // Código de verificación (6 dígitos)
-  codigoEnviado: boolean = false; // Controla si el código ya fue enviado
+  form: FormGroup;
 
-  constructor(private navCtrl: NavController) {}
-
-  // Validación del número de teléfono (debe tener exactamente 10 dígitos)
-  get isPhoneValid(): boolean {
-    return this.phoneNumber.length === 10;
+  constructor(
+    private fb: FormBuilder,
+    private navCtrl: NavController
+  ) {
+    this.form = this.fb.group({
+      name: ['', Validators.required],
+      phone: ['', [Validators.required, Validators.minLength(10)]],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]]
+    });
   }
 
-  // Validación del código de verificación (debe tener 6 dígitos)
-  get isCodeValid(): boolean {
-    return this.verificationCode.length === 6;
-  }
-
-  // Función que filtra la entrada del usuario en el campo de teléfono
-  validatePhone(event: any) {
-    // Reemplaza cualquier carácter que no sea un número (elimina letras y símbolos)
-    const inputValue = event.target.value.replace(/[^0-9]/g, '');
-    
-    // Limita la entrada a un máximo de 10 dígitos
-    this.phoneNumber = inputValue.slice(0, 10);
-  }
-
-  // Simulación del envío de código de verificación (solo si el número es válido)
-  sendCode() {
-    if (this.isPhoneValid) {
-      console.log('Código enviado a:', this.phoneNumber);
-      this.codigoEnviado = true;
+  async registrar() {
+    if (!this.form.valid) {
+      alert('⚠️ Por favor completa todos los campos correctamente');
+      return;
     }
-  }
 
-  // Simulación de verificación del código ingresado (solo si es válido)
-  verifyCode() {
-    if (this.isCodeValid) {
-      console.log('Verificando código:', this.verificationCode);
-      
-      // ✅ Redirige al usuario a la pantalla de login tras la verificación
-      this.navCtrl.navigateForward('/login');
+    const data = {
+      ...this.form.value,
+      balance: 0.0,
+      plan: "sin_plan",
+      transactions: []
+    };
+
+    try {
+      const response = await Http.post({
+        url: `${environment.apiUrl}/users/`,
+        headers: { 'Content-Type': 'application/json' },
+        data
+      });
+
+      if (response?.status === 200) {
+        alert('✅ Usuario creado con éxito');
+        this.navCtrl.navigateRoot('/login');
+      } else {
+        throw response;
+      }
+
+    } catch (error: any) {
+      const detalle: string = error?.error?.detail || '';
+
+      let mensaje: string;
+
+      if (detalle.includes('teléfono')) {
+        mensaje = '📞 El número de teléfono ya está registrado';
+      } else if (detalle.includes('correo')) {
+        mensaje = '📧 El correo ya está registrado';
+      } else if (error.status === 422) {
+        mensaje = '⚠️ Verifica que todos los campos cumplan con los requisitos mínimos';
+      } else {
+        mensaje = detalle || '❌ No se pudo registrar el usuario';
+      }
+
+      alert(mensaje);
     }
-  }
-
-  // Redirige al usuario al login si ya tiene una cuenta
-  goToLogin() {
-    this.navCtrl.navigateBack('/login');
   }
 }

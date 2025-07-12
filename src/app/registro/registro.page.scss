@@ -1,0 +1,35 @@
+ion-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  ion-item {
+    --highlight-color-focused: var(--ion-color-primary);
+  }
+
+  ion-note {
+    font-size: 13px;
+    margin-left: 12px;
+    margin-top: -10px;
+    color: var(--ion-color-danger);
+  }
+
+  ion-button {
+    margin-top: 12px;
+    font-weight: 600;
+  }
+
+  ion-button[fill="clear"] {
+    margin-top: 4px;
+    --color: var(--ion-color-medium);
+    text-decoration: underline;
+    font-size: 15px;
+  }
+}

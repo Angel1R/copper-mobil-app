@@ -1,37 +1,44 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>Registro</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Crear cuenta</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  
-  <!-- Número de teléfono -->
-  <ion-item>
-    <ion-label position="floating">Número de Teléfono</ion-label>
-    <ion-input [(ngModel)]="phoneNumber" type="tel" maxlength="10" inputmode="numeric" pattern="\d*" (ionInput)="validatePhone($event)"></ion-input>
-  </ion-item>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="registrar()">
+    <ion-item>
+      <ion-label position="floating">Nombre</ion-label>
+      <ion-input formControlName="name"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="form.get('name')?.touched && form.get('name')?.invalid">
+      El nombre es obligatorio
+    </ion-note>
 
+    <ion-item>
+      <ion-label position="floating">Teléfono</ion-label>
+      <ion-input type="tel" formControlName="phone"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="form.get('phone')?.touched && form.get('phone')?.invalid">
+      El número debe tener al menos 8 dígitos
+    </ion-note>
 
-  <!-- Botón para enviar código (solo se activa con 10 dígitos sin espacios) -->
-  <ion-button expand="full" [disabled]="!isPhoneValid" (click)="sendCode()">
-    Enviar Código de Verificación
-  </ion-button>
+    <ion-item>
+      <ion-label position="floating">Correo</ion-label>
+      <ion-input type="email" formControlName="email"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
+      Debe ser un correo válido
+    </ion-note>
 
-  <!-- Campo de código de verificación (desactivado hasta que se envíe código) -->
-  <ion-item>
-    <ion-label position="floating">Código de Verificación</ion-label>
-    <ion-input [(ngModel)]="verificationCode" type="text" maxlength="6" [disabled]="!codigoEnviado"></ion-input>
-  </ion-item>
+    <ion-item>
+      <ion-label position="floating">Contraseña</ion-label>
+      <ion-input type="password" formControlName="password"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
+      Mínimo 6 caracteres
+    </ion-note>
 
-  <!-- Botón de verificar y registrarse (activado solo con 6 caracteres) -->
-  <ion-button expand="full" [disabled]="!isCodeValid || !codigoEnviado" (click)="verifyCode()">
-    Verificar y Registrarse
-  </ion-button>
-
-  <!-- Botón para regresar al Login -->
-  <ion-button expand="full" fill="outline" (click)="goToLogin()">
-    Ya tengo cuenta, volver al Login
-  </ion-button>
-
+    <ion-button type="submit" expand="block" [disabled]="!form.valid">Crear cuenta</ion-button>
+    <ion-button fill="clear" expand="block" routerLink="/login">¿Ya tienes cuenta?</ion-button>
+  </form>
 </ion-content>
