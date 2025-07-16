@@ -68,3 +68,12 @@ class TicketDB(SupportTicketModel):
 class FAQModel(BaseModel):
     question: str
     answer: str
+
+# Modelo para solicitud de chips o portabilidad
+class ChipRequest(BaseModel):
+    userId: str
+    nombre: str
+    telefono: str
+    direccion: str
+    status: Literal["pendiente", "procesado"] = "pendiente"
+    createdAt: Optional[datetime]

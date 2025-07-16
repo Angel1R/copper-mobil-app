@@ -9,14 +9,15 @@ from dotenv import load_dotenv
 import pusher
 import mercadopago
 
-from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, TicketDB, TicketInput, FAQModel
+from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, TicketDB, TicketInput, FAQModel, ChipRequest
 from database import (
     users_collection,
     plans_collection,
     support_tickets_collection,
     data_usage_collection,
     transactions_collection,
-    faq_collection
+    faq_collection,
+    chip_requests_collection
 )
 
 
@@ -384,7 +385,25 @@ def actualizar_estado_ticket(ticket_id: str, cambios: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar el ticket: {e}")
     
-    
+@app.post("/api/chip/solicitud")
+def crear_solicitud_chip(data: dict = Body(...)):
+    try:
+        required = ["userId", "nombre", "telefono", "direccion"]
+        if not all(k in data for k in required):
+            raise HTTPException(status_code=400, detail="Faltan datos")
+
+        solicitud = {
+            **data,
+            "status": "pendiente",
+            "createdAt": datetime.utcnow().isoformat()
+        }
+
+        chip_requests_collection.insert_one(solicitud)
+        return { "message": "Solicitud recibida", "data": solicitud }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al registrar solicitud: {e}")
+
     
 # Endpoint para depurar CORS
 @app.get("/api/debug")
@@ -396,3 +415,4 @@ def debug_cors(request: Request):
         "origin": request.headers.get("origin"),
         "host": request.headers.get("host")
     }
+
