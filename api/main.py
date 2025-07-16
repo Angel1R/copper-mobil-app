@@ -393,16 +393,24 @@ def crear_solicitud_chip(data: dict = Body(...)):
             raise HTTPException(status_code=400, detail="Faltan datos")
 
         solicitud = {
-            **data,
+            "userId": data["userId"],
+            "nombre": data["nombre"],
+            "telefono": data["telefono"],
+            "direccion": data["direccion"],
             "status": "pendiente",
-            "createdAt": datetime.utcnow().isoformat()
+            "createdAt": datetime.utcnow()
         }
 
-        chip_requests_collection.insert_one(solicitud)
-        return { "message": "Solicitud recibida", "data": solicitud }
+        resultado = chip_requests_collection.insert_one(solicitud)
+
+        return {
+            "message": "Solicitud recibida",
+            "solicitud_id": str(resultado.inserted_id)
+        }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al registrar solicitud: {e}")
+        print("❌ Error interno:", e)
+        raise HTTPException(status_code=500, detail="No se pudo registrar la solicitud")
 
     
 # Endpoint para depurar CORS
@@ -415,4 +423,3 @@ def debug_cors(request: Request):
         "origin": request.headers.get("origin"),
         "host": request.headers.get("host")
     }
-
