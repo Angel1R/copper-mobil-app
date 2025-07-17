@@ -73,7 +73,8 @@ class FAQModel(BaseModel):
 class ChipRequest(BaseModel):
     userId: str
     nombre: str
-    telefono: str
     direccion: str
+    tipo: Literal["nueva", "portabilidad"]
+    telefono: Optional[str] = None  # solo si es portabilidad
     status: Literal["pendiente", "procesado"] = "pendiente"
     createdAt: Optional[datetime]

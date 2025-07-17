@@ -385,18 +385,23 @@ def actualizar_estado_ticket(ticket_id: str, cambios: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar el ticket: {e}")
     
+# Portabilidad
 @app.post("/api/chip/solicitud")
 def crear_solicitud_chip(data: dict = Body(...)):
     try:
-        required = ["userId", "nombre", "telefono", "direccion"]
+        required = ["userId", "nombre", "direccion", "tipo"]
         if not all(k in data for k in required):
-            raise HTTPException(status_code=400, detail="Faltan datos")
+            raise HTTPException(status_code=400, detail="Faltan datos obligatorios")
+
+        if data["tipo"] == "portabilidad" and not data.get("telefono"):
+            raise HTTPException(status_code=400, detail="El número de portabilidad es obligatorio")
 
         solicitud = {
             "userId": data["userId"],
             "nombre": data["nombre"],
-            "telefono": data["telefono"],
             "direccion": data["direccion"],
+            "tipo": data["tipo"],
+            "telefono": data.get("telefono"),  # opcional si no aplica
             "status": "pendiente",
             "createdAt": datetime.utcnow()
         }
