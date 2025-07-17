@@ -20,7 +20,6 @@ from database import (
     chip_requests_collection
 )
 
-
 # 🚦 Inicializar FastAPI
 app = FastAPI()
 
@@ -39,10 +38,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Cargar variables de entorno desde /api/.env
+
+# Cargar variables de entorno
 load_dotenv(dotenv_path="./api/.env")
 
-# Inicializar Pusher
+# 📡 Inicializar Pusher
 pusher_client = pusher.Pusher(
     app_id=os.getenv("PUSHER_APP_ID"),
     key=os.getenv("PUSHER_KEY"),
@@ -51,14 +51,26 @@ pusher_client = pusher.Pusher(
     ssl=True
 )
 
-# Función para emitir evento de actualización de planes
+# Función para notificar planes actualizados
 def notificar_planes_actualizados():
     try:
         pusher_client.trigger("planes-channel", "planes_actualizados", {"mensaje": "Planes actualizados"})
     except Exception as e:
-        print(" Error al notificar con Pusher:", e)
+        print("❌ Error al notificar con Pusher:", e)
 
-# Endpoint de salud
+# 📡 Evento automático de estado de API al arrancar
+@app.on_event("startup")
+async def notificar_api_encendida():
+    try:
+        pusher_client.trigger("estado-api", "online", {
+            "status": "ok",
+            "timestamp": str(datetime.utcnow())
+        })
+        print("✅ Estado API ONLINE notificado")
+    except Exception as e:
+        print("❌ Error al notificar estado ONLINE:", e)
+
+# 🩺 Endpoint de salud
 @app.get("/")
 def health_check():
     return {"status": "online"}
@@ -66,6 +78,7 @@ def health_check():
 @app.get("/api/ping")
 def ping():
     return {"status": "ok", "timestamp": datetime.utcnow()}
+
 
 @app.put("/api/planes/{plan_id}")
 def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
