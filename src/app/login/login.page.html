@@ -1,10 +1,26 @@
 <ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Iniciar sesión</ion-title>
-  </ion-toolbar>
+  
+  <ion-toolbar>
+    <ion-title>Inicio</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon [name]="apiCaida ? 'cloud-offline' : 'cloud-done'" color="{{ apiCaida ? 'danger' : 'success' }}"></ion-icon>
+    </ion-buttons>
+</ion-toolbar>
+
 </ion-header>
 
 <ion-content class="ion-padding">
+  <!-- Banner visible solo si backend no está disponible -->
+  <ion-card color="danger" *ngIf="apiCaida">
+    <ion-card-header>
+      <ion-card-title>Servidor fuera de línea</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      No se puede establecer conexión con el servidor en este momento.
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Formulario de login -->
   <form [formGroup]="form" (ngSubmit)="iniciarSesion()">
     <ion-item>
       <ion-label position="floating">Teléfono o correo</ion-label>
@@ -22,7 +38,11 @@
       Este campo es obligatorio
     </ion-note>
 
-    <ion-button type="submit" expand="block" [disabled]="!form.valid">Entrar</ion-button>
-    <ion-button fill="clear" expand="block" routerLink="/registro">¿No tienes cuenta aún?</ion-button>
+    <ion-button type="submit" expand="block" [disabled]="!form.valid || apiCaida">
+      Entrar
+    </ion-button>
+    <ion-button fill="clear" expand="block" routerLink="/registro">
+      ¿No tienes cuenta aún?
+    </ion-button>
   </form>
 </ion-content>

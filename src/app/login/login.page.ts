@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@capacitor-community/http';
 import { NavController } from '@ionic/angular';
 import { environment } from 'src/environments/environment';
+import { ApiStatusService } from 'src/app/services/api-status.service';
 
 @Component({
   selector: 'app-login',
@@ -12,15 +13,33 @@ import { environment } from 'src/environments/environment';
 })
 export class LoginPage {
   form: FormGroup;
+  apiCaida: boolean = false;
 
-  constructor(private fb: FormBuilder, private navCtrl: NavController) {
+  constructor(
+    private fb: FormBuilder,
+    private navCtrl: NavController,
+    private apiStatus: ApiStatusService
+  ) {
     this.form = this.fb.group({
-      login: ['', [Validators.required, Validators.minLength(5)]],  // puedes ajustar mínimo si usas correo
+      login: ['', [Validators.required, Validators.minLength(5)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
+    });
+
+    // Suscribimos al estado del backend para mostrar u ocultar el banner
+    this.apiStatus.apiEstaDisponible.subscribe(disponible => {
+      this.apiCaida = !disponible;
     });
   }
 
   async iniciarSesion() {
+    // 🧭 Marca actividad del usuario para reiniciar el conteo automático del servicio
+    this.apiStatus.actualizar(true);
+
+    if (this.apiCaida) {
+      alert('🚫 El servidor no está disponible en este momento. Intenta más tarde.');
+      return;
+    }
+
     if (!this.form.valid) {
       alert('⚠️ Por favor completa todos los campos correctamente');
       return;
@@ -33,7 +52,6 @@ export class LoginPage {
         data: this.form.value
       });
 
-      // Verificamos si el backend respondió correctamente
       if (response?.status === 200 && response.data?.user_id) {
         const { user_id, name, email, balance } = response.data;
         localStorage.setItem('user_id', user_id);
@@ -42,7 +60,7 @@ export class LoginPage {
         localStorage.setItem('user_balance', balance.toString());
 
         alert(`👋 Bienvenido ${name}`);
-        this.navCtrl.navigateRoot('/tabs/tab2');
+        this.navCtrl.navigateRoot('/tabs/tab3');
       } else {
         throw response;
       }
@@ -62,4 +80,5 @@ export class LoginPage {
       alert(mensaje);
     }
   }
+
 }
