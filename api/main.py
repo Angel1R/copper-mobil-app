@@ -63,6 +63,10 @@ def notificar_planes_actualizados():
 def health_check():
     return {"status": "online"}
 
+@app.get("/api/ping")
+def ping():
+    return {"status": "ok", "timestamp": datetime.utcnow()}
+
 @app.put("/api/planes/{plan_id}")
 def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
     try:
