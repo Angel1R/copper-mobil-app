@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Http } from '@capacitor-community/http';
 import { environment } from 'src/environments/environment';
+import { ToastController } from '@ionic/angular';
+import { ApiStatusService } from 'src/app/services/api-status.service';
 
 @Component({
   selector: 'app-tab5',
@@ -11,41 +13,21 @@ import { environment } from 'src/environments/environment';
 export class Tab5Page implements OnInit {
   faq: any[] = [];
   nuevaDuda: string = '';
-  tickets: any[] = [];
-  filtroEstado: string = 'todos';
-  ordenTicket: string = 'recientes';
+  enviando: boolean = false;
+    apiCaida: boolean = false;
 
-  private _mostrarHistorial: boolean = false;
-
-  get mostrarHistorial(): boolean {
-    return this._mostrarHistorial;
-  }
-  set mostrarHistorial(valor: boolean) {
-    this._mostrarHistorial = valor;
-    if (valor) {
-      this.obtenerTickets(); // recargar al abrir historial
-    }
+  constructor(
+    private toastCtrl: ToastController,
+    private apiStatus: ApiStatusService
+  ) 
+  {
+    this.apiStatus.apiEstaDisponible.subscribe(disponible => {
+      this.apiCaida = !disponible;
+    });
   }
 
   async ngOnInit() {
     await this.obtenerFaqs();
-    await this.obtenerTickets();
-  }
-
-  get ticketsFiltrados(): any[] {
-    let filtrados = [...this.tickets];
-
-    if (this.filtroEstado !== 'todos') {
-      filtrados = filtrados.filter(t => t.status === this.filtroEstado);
-    }
-
-    filtrados.sort((a, b) => {
-      const fa = new Date(a.createdAt).getTime();
-      const fb = new Date(b.createdAt).getTime();
-      return this.ordenTicket === 'recientes' ? fb - fa : fa - fb;
-    });
-
-    return filtrados;
   }
 
   async obtenerFaqs() {
@@ -61,30 +43,23 @@ export class Tab5Page implements OnInit {
     }
   }
 
-  async obtenerTickets() {
-    const userId = localStorage.getItem('user_id');
-    if (!userId) return;
-
-    try {
-      const res = await Http.get({
-        url: `${environment.apiUrl}/soporte/${userId}`,
-        headers: {}
-      });
-      this.tickets = res.data?.tickets || [];
-    } catch (error) {
-      console.error('❌ Error al obtener historial de tickets:', error);
-      this.tickets = [];
-    }
-  }
-
   async enviarTicket() {
+    // 🧭 Marca actividad manual para reiniciar temporizador del servicio
+    this.apiStatus.actualizar(true);
+
     const userId = localStorage.getItem('user_id');
     if (!userId || !this.nuevaDuda.trim()) {
-      alert('⚠️ Ingresa tu duda antes de enviar');
-      return;
+      const alerta = await this.toastCtrl.create({
+        message: '⚠️ Ingresa tu duda antes de enviar',
+        duration: 2000,
+        color: 'warning',
+        position: 'top'
+      });
+      return alerta.present();
     }
 
     const ticket = { userId, issue: this.nuevaDuda.trim() };
+    this.enviando = true;
 
     try {
       const res = await Http.post({
@@ -93,13 +68,29 @@ export class Tab5Page implements OnInit {
         data: ticket
       });
 
-      alert('📩 Tu duda fue enviada correctamente');
+      const toast = await this.toastCtrl.create({
+        message: '📩 Tu duda fue enviada correctamente',
+        duration: 2000,
+        color: 'success',
+        position: 'top',
+        animated: true,
+        cssClass: 'toast-fade-in'
+      });
+      await toast.present();
+
       this.nuevaDuda = '';
-      await this.obtenerTickets(); // Recargar historial
-      this.mostrarHistorial = true;
     } catch (error) {
-      alert('❌ Error al enviar tu ticket de soporte');
+      const err = await this.toastCtrl.create({
+        message: '❌ Error al enviar tu ticket de soporte',
+        duration: 2000,
+        color: 'danger',
+        position: 'top'
+      });
+      await err.present();
       console.error(error);
+    } finally {
+      this.enviando = false;
     }
   }
+
 }

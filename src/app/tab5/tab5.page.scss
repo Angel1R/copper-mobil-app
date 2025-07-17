@@ -17,3 +17,26 @@ ion-label.respuesta p {
   transition: max-height 300ms ease, opacity 300ms ease;
   overflow: hidden;
 }
+
+ion-button.enviar-animado {
+  transition: transform 0.2s ease-in-out;
+}
+
+ion-button.enviar-animado:active {
+  transform: scale(0.97);
+}
+
+.toast-fade-in {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
