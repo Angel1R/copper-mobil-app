@@ -51,6 +51,17 @@ pusher_client = pusher.Pusher(
     ssl=True
 )
 
+def notificar_api_offline(error_msg=""):
+    try:
+        pusher_client.trigger("estado-api", "offline", {
+            "status": "fail",
+            "timestamp": str(datetime.utcnow()),
+            "error": error_msg
+        })
+        print("❌ Estado API OFFLINE notificado")
+    except Exception as e:
+        print("Error al emitir evento OFFLINE:", e)
+
 # Función para notificar planes actualizados
 def notificar_planes_actualizados():
     try:
@@ -177,8 +188,13 @@ def crear_plan(plan: PlanModel):
 # Obtener todos los planes
 @app.get("/api/planes", response_model=List[PlanModel])
 def obtener_planes():
-    planes = list(plans_collection.find({}, {"_id": 0}))
-    return planes
+    try:
+        planes = list(plans_collection.find({}, {"_id": 0}))
+        return planes
+    except Exception as e:
+        notificar_api_offline(f"Error al obtener planes: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno al obtener los planes")
+
 
 # Obtener plan de un usuario
 @app.get("/api/planes/{user_id}")
@@ -223,16 +239,6 @@ def registrar_recarga(datos: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
 
 
-# Simulación de recarga
-''' @app.post("/api/recargas")
-def registrar_recarga(datos: dict = Body(...)):
-    try:
-        # Aquí se podrían guardar en MongoDB si lo deseas
-        print(" Recarga simulada:", datos)
-        return {"message": "Recarga simulada con éxito", "datos": datos}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
- '''
 
 # MERCADOPAGO
 @app.post("/api/pago/mercadopago")
