@@ -3,7 +3,7 @@ import { Http } from '@capacitor-community/http';
 import { environment } from 'src/environments/environment';
 import Pusher, { Channel } from 'pusher-js';
 import { Browser } from '@capacitor/browser';
-import { App } from '@capacitor/app'; // Para capturar deep links
+import { App } from '@capacitor/app';
 
 @Component({
   selector: 'app-tab2',
@@ -16,18 +16,31 @@ export class Tab2Page implements OnInit, OnDestroy {
   cargando: boolean = true;
   pusher: Pusher | null = null;
   canal: Channel | null = null;
+  errorAlCargarPlanes: boolean = false;
+
+  vistaSeleccionada: string = 'planes';
+
+  chipForm = {
+    tipo: 'nueva',
+    nombre: '',
+    telefono: '',
+    direccion: ''
+  };
+
+  enviandoSolicitud: boolean = false;
+
+  get telefonoValido(): boolean {
+    return /^[0-9]{10}$/.test(this.chipForm.telefono.trim());
+  }
 
   async ngOnInit() {
     await this.obtenerPlanes();
     this.iniciarPusher();
     this.configurarDeepLinks();
-    // ❌ Eliminar simulación — ya se guarda en login
   }
 
   configurarDeepLinks() {
     App.addListener('appUrlOpen', async ({ url }) => {
-      console.log('🔗 Deep link recibido:', url);
-
       const parsed = new URL(url);
       const ruta = parsed.pathname;
       const paymentId = parsed.searchParams.get('payment_id');
@@ -35,6 +48,7 @@ export class Tab2Page implements OnInit, OnDestroy {
       if (ruta === '/pago-exitoso' && paymentId) {
         const response = await Http.get({
           url: `${environment.apiUrl}/pago/validar`,
+          headers: {},
           params: { payment_id: paymentId }
         });
 
@@ -52,21 +66,25 @@ export class Tab2Page implements OnInit, OnDestroy {
   }
 
   async obtenerPlanes() {
-    this.cargando = true;
-    try {
-      const response = await Http.get({
-        url: `${environment.apiUrl}/planes`,
-        headers: {},
-        params: {}
-      });
-      this.planes = response.data || [];
-    } catch (error) {
-      console.error('❌ Error al obtener planes:', error);
-      this.planes = [];
-    } finally {
-      this.cargando = false;
-    }
+  this.cargando = true;
+  this.errorAlCargarPlanes = false; // Reinicia error
+
+  try {
+    const response = await Http.get({
+      url: `${environment.apiUrl}/planes`,
+      headers: {},
+      params: {}
+    });
+    this.planes = response.data || [];
+  } catch (error) {
+    console.error(' Error al obtener planes:', error);
+    this.errorAlCargarPlanes = true; // Marca el error específico
+    this.planes = [];
+  } finally {
+    this.cargando = false;
   }
+}
+
 
   iniciarPusher() {
     this.pusher = new Pusher(environment.pusherKey, {
@@ -76,7 +94,6 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.canal = this.pusher.subscribe('planes-channel') as Channel;
 
     this.canal.bind('planes_actualizados', () => {
-      console.log('[📡] Planes actualizados vía Pusher');
       this.obtenerPlanes();
     });
 
@@ -99,18 +116,15 @@ export class Tab2Page implements OnInit, OnDestroy {
       user_id: userId
     };
 
-    console.log('📦 Enviando datos al backend:', payload);
-
     try {
       const response = await Http.post({
         url: `${environment.apiUrl}/pago/mercadopago`,
         headers: { 'Content-Type': 'application/json' },
-        data: payload
+        data: payload,
+        params: {}
       });
 
       const initPoint = response.data?.init_point;
-      console.log('🔍 Resultado completo:', response.data);
-
       if (initPoint) {
         await Browser.open({ url: initPoint });
       } else {
@@ -120,6 +134,56 @@ export class Tab2Page implements OnInit, OnDestroy {
     } catch (error: any) {
       console.error('❌ Error al iniciar pago:', error);
       alert(error?.error?.detail || 'Hubo un problema al contactar con el sistema de pagos');
+    }
+  }
+
+  async enviarSolicitudChip() {
+    const userId = localStorage.getItem('user_id');
+    const { tipo, nombre, telefono, direccion } = this.chipForm;
+
+    const datosValidos =
+      tipo === 'nueva'
+        ? nombre.trim() !== '' && direccion.trim() !== ''
+        : nombre.trim() !== '' && this.telefonoValido && direccion.trim() !== '';
+
+    if (!userId || !datosValidos) {
+      alert('⚠️ Completa todos los campos correctamente antes de continuar');
+      return;
+    }
+
+    const payload: any = {
+      userId,
+      nombre: nombre.trim(),
+      direccion: direccion.trim(),
+      tipo
+    };
+
+    if (tipo === 'portabilidad') {
+      payload.telefono = telefono.trim();
+    }
+
+    this.enviandoSolicitud = true;
+
+    try {
+      const res = await Http.post({
+        url: `${environment.apiUrl}/chip/solicitud`,
+        headers: { 'Content-Type': 'application/json' },
+        data: payload,
+        params: {}
+      });
+
+      alert('📦 Solicitud enviada correctamente');
+
+      const historialChip = JSON.parse(localStorage.getItem('historial_chip') || '[]');
+      historialChip.push({ fecha: new Date().toISOString(), ...payload });
+      localStorage.setItem('historial_chip', JSON.stringify(historialChip));
+
+      this.chipForm = { tipo: 'nueva', nombre: '', telefono: '', direccion: '' };
+    } catch (error) {
+      alert('❌ Error al enviar la solicitud de chip');
+      console.error(error);
+    } finally {
+      this.enviandoSolicitud = false;
     }
   }
 

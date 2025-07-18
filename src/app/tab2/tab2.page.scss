@@ -14,3 +14,21 @@ ion-label p {
   font-size: 14px;
   color: #666;
 }
+
+.input-error {
+  border: 1px solid var(--ion-color-danger);
+  border-radius: 8px;
+}
+
+.input-alert {
+  padding-left: 12px;
+  font-size: 13px;
+}
+
+.tipo-selector ion-radio {
+  --color: var(--ion-color-primary);
+}
+
+.tipo-selector {
+  --inner-border-radius: 8px;
+}

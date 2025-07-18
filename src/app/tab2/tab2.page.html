@@ -1,29 +1,128 @@
 <ion-content>
-  <ion-list *ngIf="!cargando && planes.length > 0; else estadoCarga">
-    <ion-item *ngFor="let plan of planes">
-  <ion-label>
-    <h2>{{ plan.name }} - ${{ plan.price }}</h2>
-    <p>{{ plan.data_limit }} por {{ plan.validity_days }} días</p>
-    <ul>
-      <li *ngFor="let b of plan.benefits">✔ {{ b }}</li>
-    </ul>
-  </ion-label>
 
-  <ion-button fill="outline" slot="end" color="success" (click)="iniciarRecarga(plan)">
-    Recargar
-  </ion-button>
-</ion-item>
+  <!-- Segmento para navegación entre planes y chips -->
+  <ion-segment [(ngModel)]="vistaSeleccionada">
+    <ion-segment-button value="planes">
+      <ion-label>Planes</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="chips">
+      <ion-label>Chips</ion-label>
+    </ion-segment-button>
+  </ion-segment>
 
-  </ion-list>
+  <!-- Contenido: Planes -->
+  <div *ngIf="vistaSeleccionada === 'planes'">
+    <ion-card color="danger" *ngIf="errorAlCargarPlanes">
+      <ion-card-header>
+        <ion-card-title>No se pudieron cargar los planes</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        El servidor presentó un problema al obtener los planes. Intenta más tarde.
+      </ion-card-content>
+    </ion-card>
 
-  <ng-template #estadoCarga>
-    <div *ngIf="cargando; else sinPlanes">
-      <ion-spinner name="dots"></ion-spinner>
-      <p style="text-align: center;">Cargando planes...</p>
-    </div>
-  </ng-template>
+    <ion-list *ngIf="!cargando && planes.length > 0; else estadoCarga">
+      <ion-item *ngFor="let plan of planes">
+        <ion-label>
+          <h2>{{ plan.name }} - ${{ plan.price }}</h2>
+          <p>{{ plan.data_limit }} por {{ plan.validity_days }} días</p>
+          <ul>
+            <li *ngFor="let b of plan.benefits">✔ {{ b }}</li>
+          </ul>
+        </ion-label>
+        <ion-button fill="outline" slot="end" color="success" (click)="iniciarRecarga(plan)">
+          Recargar
+        </ion-button>
+      </ion-item>
+    </ion-list>
 
-  <ng-template #sinPlanes>
-    <p style="text-align: center; color: gray;">No hay planes disponibles.</p>
-  </ng-template>
+    <ng-template #estadoCarga>
+      <div *ngIf="cargando; else sinPlanes">
+        <ion-spinner name="dots"></ion-spinner>
+        <p style="text-align: center;">Cargando planes...</p>
+      </div>
+    </ng-template>
+
+    <ng-template #sinPlanes>
+      <p style="text-align: center; color: gray;">No hay planes disponibles.</p>
+    </ng-template>
+  </div>
+
+  <!-- Contenido: Chips -->
+  <div *ngIf="vistaSeleccionada === 'chips'" style="padding: 12px;">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Chip físico o portabilidad</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+
+        <!-- Tipo de solicitud -->
+        <ion-radio-group [(ngModel)]="chipForm.tipo">
+          <ion-item button detail="false" class="tipo-selector" (click)="chipForm.tipo = 'nueva'">
+            <ion-radio slot="start" value="nueva"></ion-radio>
+            <ion-label>Línea nueva</ion-label>
+          </ion-item>
+          <ion-item button detail="false" class="tipo-selector" (click)="chipForm.tipo = 'portabilidad'">
+            <ion-radio slot="start" value="portabilidad"></ion-radio>
+            <ion-label>Portabilidad</ion-label>
+          </ion-item>
+        </ion-radio-group>
+
+
+        <!-- Nombre -->
+        <ion-item [ngClass]="{ 'input-error': chipForm.nombre.trim() === '' }" button detail="false">
+          <ion-input
+            [(ngModel)]="chipForm.nombre"
+            required
+            maxlength="80"
+            placeholder="Nombre completo"
+            aria-label="Nombre completo">
+          </ion-input>
+        </ion-item>
+        <ion-text color="danger" *ngIf="chipForm.nombre.trim() === ''">
+          <p class="input-alert">El nombre es obligatorio</p>
+        </ion-text>
+
+        <!-- Teléfono (solo si portabilidad) -->
+        <div *ngIf="chipForm.tipo === 'portabilidad'">
+          <ion-item [ngClass]="{ 'input-error': !telefonoValido }" button detail="false">
+            <ion-input
+              type="tel"
+              inputmode="numeric"
+              maxlength="10"
+              [(ngModel)]="chipForm.telefono"
+              required
+              placeholder="Teléfono a portar"
+              aria-label="Teléfono a portar">
+            </ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="chipForm.telefono && !telefonoValido">
+            <p class="input-alert">Debe contener 10 dígitos numéricos</p>
+          </ion-text>
+        </div>
+
+        <!-- Dirección -->
+        <ion-item [ngClass]="{ 'input-error': chipForm.direccion.trim() === '' }" button detail="false">
+          <ion-textarea
+            [(ngModel)]="chipForm.direccion"
+            autoGrow="true"
+            required
+            maxlength="200"
+            placeholder="Dirección completa"
+            aria-label="Domicilio de entrega">
+          </ion-textarea>
+        </ion-item>
+        <ion-text color="danger" *ngIf="chipForm.direccion.trim() === ''">
+          <p class="input-alert">La dirección es obligatoria</p>
+        </ion-text>
+
+        <ion-button expand="block" color="primary" [disabled]="enviandoSolicitud" (click)="enviarSolicitudChip()">
+          <ion-spinner *ngIf="enviandoSolicitud" slot="start" name="dots"></ion-spinner>
+          Solicitar chip
+        </ion-button>
+
+      </ion-card-content>
+    </ion-card>
+  </div>
+
 </ion-content>
