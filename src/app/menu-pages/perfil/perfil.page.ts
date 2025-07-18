@@ -14,8 +14,12 @@ export class PerfilPage {
 
   constructor(private navCtrl: NavController) {}
 
-  goBack() {
-    this.navCtrl.navigateBack('/tabs/tab3'); // Regresar a la pestaña principal
+  volverAHome() {
+    this.navCtrl.navigateBack('/tabs/tab3');
+    setTimeout(() => {
+      const activo = document.activeElement as HTMLElement;
+      activo?.blur();
+    }, 300); // evita conflicto con ion-searchbar
   }
 
   ionViewWillEnter() {

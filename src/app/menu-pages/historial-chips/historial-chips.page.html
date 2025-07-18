@@ -1,0 +1,70 @@
+<ion-content>
+
+  <ion-button fill="clear" (click)="volverAHome()">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+    Volver
+  </ion-button>
+
+  <ion-refresher slot="fixed" (ionRefresh)="actualizar($event)">
+    <ion-refresher-content pullingIcon="chevron-down" refreshingSpinner="circles" pullingText="Desliza para actualizar" refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <ion-searchbar
+    [(ngModel)]="busqueda"
+    placeholder="Buscar por nombre o dirección"
+    debounce="300"
+    showCancelButton="focus">
+  </ion-searchbar>
+
+  <div style="padding: 0 16px;">
+    <ion-item>
+      <ion-label>Estado</ion-label>
+      <ion-select [(ngModel)]="filtroEstado" interface="popover">
+        <ion-select-option value="todos">Todos</ion-select-option>
+        <ion-select-option value="pendiente">Pendientes</ion-select-option>
+        <ion-select-option value="procesado">Procesados</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Orden</ion-label>
+      <ion-select [(ngModel)]="ordenChips" interface="popover">
+        <ion-select-option value="recientes">Más recientes</ion-select-option>
+        <ion-select-option value="antiguos">Más antiguos</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </div>
+
+  <ion-card *ngIf="chipsFiltrados.length > 0">
+    <ion-card-header>
+      <ion-card-title>🧾 Chips solicitados</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let c of chipsFiltrados">
+          <ion-label>
+            <h4>{{ c.nombre }} — {{ c.tipo === 'nueva' ? 'Línea nueva' : 'Portabilidad' }}</h4>
+            <p style="font-size: 13px; color: gray;">
+              Estado:
+              <strong [style.color]="c.status === 'procesado' ? 'green' : 'orange'">
+                {{ c.status === 'procesado' ? '✅ Procesado' : '⏳ Pendiente' }}
+              </strong>
+              |
+              {{ c.createdAt | date:'medium' }}
+            </p>
+            <p style="font-size: 13px;">Dirección: {{ c.direccion }}</p>
+            <p *ngIf="c.telefono">Teléfono: {{ c.telefono }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="chipsFiltrados.length === 0">
+    <ion-card-content style="text-align: center; color: gray;">
+      No hay chips que coincidan con ese filtro o búsqueda.
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

@@ -1,0 +1,72 @@
+<ion-content>
+
+  <ion-button fill="clear" (click)="volverAHome()">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+    Volver
+  </ion-button>
+
+  <!-- Refresher -->
+  <ion-refresher slot="fixed" (ionRefresh)="actualizar($event)">
+    <ion-refresher-content pullingIcon="chevron-down" refreshingSpinner="circles" pullingText="Desliza para actualizar" refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Buscador -->
+  <ion-searchbar
+    [(ngModel)]="busqueda"
+    placeholder="Buscar por palabras clave"
+    debounce="300"
+    showCancelButton="focus">
+  </ion-searchbar>
+
+  <!-- Filtros -->
+  <div style="padding: 0 16px;">
+    <ion-item>
+      <ion-label>Estado</ion-label>
+      <ion-select [(ngModel)]="filtroEstado" interface="popover">
+        <ion-select-option value="todos">Todos</ion-select-option>
+        <ion-select-option value="pendiente">Pendientes</ion-select-option>
+        <ion-select-option value="resuelto">Resueltos</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label>Orden</ion-label>
+      <ion-select [(ngModel)]="ordenTicket" interface="popover">
+        <ion-select-option value="recientes">Más recientes</ion-select-option>
+        <ion-select-option value="antiguos">Más antiguos</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </div>
+
+  <!-- Historial de tickets -->
+  <ion-card *ngIf="ticketsFiltrados.length > 0">
+    <ion-card-header>
+      <ion-card-title>📜 Historial de soporte</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item *ngFor="let t of ticketsFiltrados">
+          <ion-label>
+            <h4>{{ t.issue }}</h4>
+            <p style="font-size: 13px; color: gray;">
+              Estado:
+              <strong [style.color]="t.status === 'resuelto' ? 'green' : 'orange'">
+                {{ t.status === 'resuelto' ? '✅ Resuelto' : '⏳ Pendiente' }}
+              </strong>
+              |
+              {{ t.createdAt | date:'medium' }}
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="ticketsFiltrados.length === 0">
+    <ion-card-content style="text-align: center; color: gray;">
+      No hay tickets para ese filtro o palabra clave.
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
