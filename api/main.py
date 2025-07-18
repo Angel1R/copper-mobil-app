@@ -446,6 +446,29 @@ def crear_solicitud_chip(data: dict = Body(...)):
     except Exception as e:
         print("❌ Error interno:", e)
         raise HTTPException(status_code=500, detail="No se pudo registrar la solicitud")
+    
+@app.get("/api/chips/{user_id}")
+def obtener_chips_usuario(user_id: str):
+    try:
+        chips = list(chip_requests_collection.find({"userId": user_id}, {"_id": 0}))
+        return {"chips": chips}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener historial de chips: {e}")
+
+
+@app.put("/api/chips/{chip_id}")
+def actualizar_chip(chip_id: str, cambios: dict = Body(...)):
+    try:
+        resultado = chip_requests_collection.update_one(
+            {"_id": ObjectId(chip_id)},
+            {"$set": cambios}
+        )
+        if resultado.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Solicitud de chip no encontrada")
+        return {"message": "Solicitud de chip actualizada"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar solicitud: {e}")
+
 
     
 # Endpoint para depurar CORS
