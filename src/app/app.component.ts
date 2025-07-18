@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ApiStatusService } from './services/api-status.service';
 
 @Component({
   selector: 'app-root',
@@ -7,5 +8,7 @@ import { Component } from '@angular/core';
   standalone: false,
 })
 export class AppComponent {
-  constructor() {}
+  constructor(private apiStatus: ApiStatusService) {
+    // El servicio empieza a monitorear automáticamente
+  }
 }
