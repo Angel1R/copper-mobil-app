@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Body, Request, Path
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
 from bson.objectid import ObjectId
@@ -119,9 +120,15 @@ def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
 def create_user(user: UserInput):
     # Validar duplicados
     if users_collection.find_one({"phone": user.phone}):
-        raise HTTPException(status_code=400, detail="El número de teléfono ya está registrado")
+        return JSONResponse(
+        status_code=400,
+        content={"detail": "El número de teléfono ya está registrado"}
+    )
     if users_collection.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="El correo ya está registrado")
+        return JSONResponse(
+        status_code=400,
+        content={"detail": "El correo ya está registrado"}
+    )
 
     # Preparar documento con fecha
     user_data = user.dict()
