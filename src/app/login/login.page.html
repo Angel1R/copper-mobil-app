@@ -11,9 +11,9 @@
 
 <ion-content class="ion-padding">
   <!-- Banner visible solo si backend no está disponible -->
-  <ion-card color="danger" *ngIf="apiCaida">
+  <ion-card color="warning" *ngIf="apiCaida">
     <ion-card-header>
-      <ion-card-title>Servidor fuera de línea</ion-card-title>
+      <ion-card-title>Servidor en mantenimiento</ion-card-title>
     </ion-card-header>
     <ion-card-content>
       No se puede establecer conexión con el servidor en este momento.

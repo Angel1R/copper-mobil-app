@@ -4,6 +4,7 @@ import { Http } from '@capacitor-community/http';
 import { NavController } from '@ionic/angular';
 import { environment } from 'src/environments/environment';
 import { ApiStatusService } from 'src/app/services/api-status.service';
+import { ToastService } from 'src/app/services/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +19,8 @@ export class LoginPage {
   constructor(
     private fb: FormBuilder,
     private navCtrl: NavController,
-    private apiStatus: ApiStatusService
+    private apiStatus: ApiStatusService,
+    private toast: ToastService
   ) {
     this.form = this.fb.group({
       login: ['', [Validators.required, Validators.minLength(5)]],
@@ -32,16 +34,16 @@ export class LoginPage {
   }
 
   async iniciarSesion() {
-    // 🧭 Marca actividad del usuario para reiniciar el conteo automático del servicio
+    // Marca actividad del usuario para reiniciar el conteo automático del servicio
     this.apiStatus.actualizar(true);
 
     if (this.apiCaida) {
-      alert('🚫 El servidor no está disponible en este momento. Intenta más tarde.');
+      this.toast.mostrarToast(' El servidor no está disponible en este momento. Intenta más tarde.');
       return;
     }
 
     if (!this.form.valid) {
-      alert('⚠️ Por favor completa todos los campos correctamente');
+      this.toast.mostrarToast(' Por favor completa todos los campos correctamente', 'warning');
       return;
     }
 
@@ -49,7 +51,8 @@ export class LoginPage {
       const response = await Http.post({
         url: `${environment.apiUrl}/auth/login`,
         headers: { 'Content-Type': 'application/json' },
-        data: this.form.value
+        data: this.form.value,
+        params: {}
       });
 
       if (response?.status === 200 && response.data?.user_id) {
@@ -59,7 +62,7 @@ export class LoginPage {
         localStorage.setItem('user_email', email);
         localStorage.setItem('user_balance', balance.toString());
 
-        alert(`👋 Bienvenido ${name}`);
+        this.toast.mostrarToast(`👋 Bienvenido ${name}`);
         this.navCtrl.navigateRoot('/tabs/tab3');
       } else {
         throw response;
@@ -77,7 +80,7 @@ export class LoginPage {
         mensaje = detalle || '❌ No se pudo iniciar sesión';
       }
 
-      alert(mensaje);
+      this.toast.mostrarToast(mensaje, 'danger');
     }
   }
 
