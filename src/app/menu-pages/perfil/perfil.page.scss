@@ -1,23 +1,83 @@
-ion-card {
-  margin-top: 20px;
-  text-align: center;
+ion-content {
+  --background: linear-gradient(to bottom, #1e1e2e 0%, #2a2a3b 80%);
+  color: #eee;
+  position: relative;
+  padding-top: 12px;
+  opacity: 0;
+  transform: translateX(100px);
+  animation: slideInPerfil 0.35s ease-out forwards;
+}
 
-  ion-card-title {
-    font-size: 24px;
+/* Botón de volver */
+ion-header {
+  ion-button {
+    margin: 12px;
     font-weight: bold;
-  }
+    color: #000000;
 
-  ion-card-subtitle {
-    color: var(--ion-color-medium);
-    margin-top: 6px;
-  }
-
-  ion-card-content {
-    margin-top: 12px;
-    font-size: 16px;
+    ion-icon {
+      font-size: 20px;
+      margin-right: 6px;
+    }
   }
 }
 
-ion-button {
-  margin-top: 30px;
+/* Card de perfil */
+ion-card {
+  background: linear-gradient(to right, #2c2c3c, #3a3a4c);
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+  color: #f5f5f5;
+  margin-bottom: 24px;
+  animation: fadeInPerfil 0.6s ease-in;
+}
+
+ion-card-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffd86b;
+}
+
+ion-card-subtitle {
+  font-size: 14px;
+  color: #cccccc;
+  font-style: italic;
+}
+
+ion-card-content p {
+  font-size: 15px;
+  margin-top: 8px;
+  color: #ddd;
+}
+
+ion-card-content strong {
+  color: #20c997;
+}
+
+/* Botón cerrar sesión */
+ion-button[color="danger"] {
+  --background: #ff4d4d;
+  --color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
+}
+
+/* Entrada animada */
+@keyframes fadeInPerfil {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInPerfil {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
