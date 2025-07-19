@@ -96,7 +96,6 @@ def hash_password(password: str) -> str:
 def verify_password(plain, hashed) -> bool:
     return pwd_context.verify(plain, hashed)
 
-# ✅ Registro de usuario con hashing y email opcional
 @app.post("/api/users/", response_model=UserResponse)
 def create_user(user: UserInput):
     if users_collection.find_one({"phone": user.phone}):
@@ -106,6 +105,7 @@ def create_user(user: UserInput):
 
     user_data = user.dict()
     user_data["password"] = hash_password(user.password)
+    print("🔐 Password hasheada:", user_data["password"])  # 👈 Aquí se muestra el hash generado
     user_data["createdAt"] = datetime.utcnow()
 
     inserted_user = users_collection.insert_one(user_data)
@@ -118,6 +118,7 @@ def create_user(user: UserInput):
         balance=user.balance,
         plan=user.plan
     )
+
 
 # 🔐 Login con verificación de hash
 @app.post("/api/auth/login")
@@ -148,7 +149,7 @@ def login_user(data: dict = Body(...)):
         "balance": user["balance"]
     }
 
-# 📲 Enviar código OTP
+# Enviar código OTP
 @app.post("/api/auth/send-otp")
 def enviar_otp(data: dict = Body(...)):
     phone = data.get("phone")
@@ -168,7 +169,7 @@ def enviar_otp(data: dict = Body(...)):
 
     return {"message": "Código enviado"}
 
-# ✅ Validar código OTP
+# Validar código OTP
 @app.post("/api/auth/validate-otp")
 def validar_otp(data: dict = Body(...)):
     phone = data.get("phone")
@@ -246,7 +247,7 @@ async def log_headers(request: Request, call_next):
 def registrar_recarga(datos: dict = Body(...)):
     try:
         # Aquí se podrían guardar en MongoDB si lo deseas
-        print("📲 Recarga simulada:", datos)
+        print(" Recarga simulada:", datos)
         return {"message": "Recarga simulada con éxito", "datos": datos}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
