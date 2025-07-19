@@ -21,7 +21,7 @@ from models import (
 from database import (
     users_collection, plans_collection, support_tickets_collection,
     data_usage_collection, transactions_collection, faq_collection,
-    chip_requests_collection, otp_collection  # ➕ Asegúrate de tener esta
+    chip_requests_collection, otp_collection
 )
 
 # 🚦 Inicializar FastAPI
