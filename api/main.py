@@ -2,23 +2,26 @@ from fastapi import FastAPI, HTTPException, Body, Request, Path
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
-from bson.objectid import ObjectId
-from typing import List
-from datetime import datetime
+from typing import List, Optional
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 import pusher
 import mercadopago
+from passlib.context import CryptContext
+from random import randint
 
-from models import UserModel, PlanModel, UserInput, UserResponse, TransactionModel, DataUsageModel, SupportTicketModel, TicketDB, TicketInput, FAQModel, ChipRequest
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+from models import (
+    UserModel, PlanModel, UserInput, UserResponse,
+    TransactionModel, DataUsageModel, SupportTicketModel,
+    TicketDB, TicketInput, FAQModel, ChipRequest
+)
 from database import (
-    users_collection,
-    plans_collection,
-    support_tickets_collection,
-    data_usage_collection,
-    transactions_collection,
-    faq_collection,
-    chip_requests_collection
+    users_collection, plans_collection, support_tickets_collection,
+    data_usage_collection, transactions_collection, faq_collection,
+    chip_requests_collection, otp_collection  # ➕ Asegúrate de tener esta
 )
 
 # 🚦 Inicializar FastAPI
@@ -40,7 +43,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cargar variables de entorno
 load_dotenv(dotenv_path="./api/.env")
 
 # 📡 Inicializar Pusher
@@ -59,18 +61,15 @@ def notificar_api_offline(error_msg=""):
             "timestamp": str(datetime.utcnow()),
             "error": error_msg
         })
-        print("❌ Estado API OFFLINE notificado")
     except Exception as e:
         print("Error al emitir evento OFFLINE:", e)
 
-# Función para notificar planes actualizados
 def notificar_planes_actualizados():
     try:
         pusher_client.trigger("planes-channel", "planes_actualizados", {"mensaje": "Planes actualizados"})
     except Exception as e:
         print("❌ Error al notificar con Pusher:", e)
 
-# 📡 Evento automático de estado de API al arrancar
 @app.on_event("startup")
 async def notificar_api_encendida():
     try:
@@ -78,11 +77,10 @@ async def notificar_api_encendida():
             "status": "ok",
             "timestamp": str(datetime.utcnow())
         })
-        print("✅ Estado API ONLINE notificado")
     except Exception as e:
         print("❌ Error al notificar estado ONLINE:", e)
 
-# 🩺 Endpoint de salud
+# 🩺 Salud
 @app.get("/")
 def health_check():
     return {"status": "online"}
@@ -91,47 +89,23 @@ def health_check():
 def ping():
     return {"status": "ok", "timestamp": datetime.utcnow()}
 
+# 🧱 Hashing
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
-@app.put("/api/planes/{plan_id}")
-def actualizar_plan(plan_id: str, cambios: dict = Body(...)):
-    try:
-        resultado = plans_collection.update_one(
-            {"_id": ObjectId(plan_id)},
-            {"$set": cambios}
-        )
+def verify_password(plain, hashed) -> bool:
+    return pwd_context.verify(plain, hashed)
 
-        if resultado.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Plan no encontrado")
-
-        notificar_planes_actualizados()
-
-        plan_actualizado = plans_collection.find_one({"_id": ObjectId(plan_id)}, {"_id": 0})
-        return {
-            "message": "Plan actualizado correctamente",
-            "plan": plan_actualizado
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar el plan: {e}")
-
-
-# Crear usuario
+# ✅ Registro de usuario con hashing y email opcional
 @app.post("/api/users/", response_model=UserResponse)
 def create_user(user: UserInput):
-    # Validar duplicados
     if users_collection.find_one({"phone": user.phone}):
-        return JSONResponse(
-        status_code=400,
-        content={"detail": "El número de teléfono ya está registrado"}
-    )
-    if users_collection.find_one({"email": user.email}):
-        return JSONResponse(
-        status_code=400,
-        content={"detail": "El correo ya está registrado"}
-    )
+        return JSONResponse(status_code=400, content={"detail": "Teléfono ya registrado"})
+    if user.email and users_collection.find_one({"email": user.email}):
+        return JSONResponse(status_code=400, content={"detail": "Correo ya registrado"})
 
-    # Preparar documento con fecha
     user_data = user.dict()
+    user_data["password"] = hash_password(user.password)
     user_data["createdAt"] = datetime.utcnow()
 
     inserted_user = users_collection.insert_one(user_data)
@@ -145,38 +119,70 @@ def create_user(user: UserInput):
         plan=user.plan
     )
 
-# Login de usuario
+# 🔐 Login con verificación de hash
 @app.post("/api/auth/login")
 def login_user(data: dict = Body(...)):
-    login_id = data.get("login")  # puede ser teléfono o correo
+    login_id = data.get("login")
     password = data.get("password")
 
     if not login_id or not password:
-        raise HTTPException(status_code=400, detail="Faltan datos de login")
+        raise HTTPException(status_code=400, detail="Faltan datos")
 
     user = users_collection.find_one({
         "$or": [{"phone": login_id}, {"email": login_id}]
     })
 
-    if not user or user.get("password") != password:
+    if not user or not verify_password(password, user.get("password")):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    # Validación de integridad del usuario
-    for campo in ["name", "email", "plan", "balance"]:
+    for campo in ["name", "plan", "balance"]:
         if campo not in user:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Campo faltante en el usuario: {campo}"
-            )
+            raise HTTPException(status_code=500, detail=f"Campo faltante: {campo}")
 
     return {
-        "message": "Inicio de sesión exitoso",
+        "message": "Login exitoso",
         "user_id": str(user["_id"]),
         "name": user["name"],
-        "email": user["email"],
+        "email": user.get("email", ""),
         "plan": user["plan"],
         "balance": user["balance"]
     }
+
+# 📲 Enviar código OTP
+@app.post("/api/auth/send-otp")
+def enviar_otp(data: dict = Body(...)):
+    phone = data.get("phone")
+    if not phone:
+        raise HTTPException(status_code=400, detail="Falta el número")
+
+    code = str(randint(100000, 999999))
+    otp_collection.delete_many({"phone": phone})  # limpiar previos
+    otp_collection.insert_one({
+        "phone": phone,
+        "code": code,
+        "expiresAt": datetime.utcnow() + timedelta(minutes=2)
+    })
+
+    # Aquí iría la integración real con API SMS externa
+    print(f"🧪 Código generado para {phone}: {code}")
+
+    return {"message": "Código enviado"}
+
+# ✅ Validar código OTP
+@app.post("/api/auth/validate-otp")
+def validar_otp(data: dict = Body(...)):
+    phone = data.get("phone")
+    code = data.get("code")
+
+    if not phone or not code:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+
+    registro = otp_collection.find_one({"phone": phone})
+    if not registro or registro["code"] != code or registro["expiresAt"] < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Código inválido o expirado")
+
+    return {"message": "Código válido"}
+
     
 # Crear nuevo plan y notificar con Pusher
 @app.post("/api/planes")

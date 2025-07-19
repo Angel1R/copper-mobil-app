@@ -7,7 +7,7 @@ class UserInput(BaseModel):
     phone: str = Field(..., min_length=10)
     password: str = Field(..., min_length=6)
     name: str
-    email: EmailStr
+    email: Optional[EmailStr] = None
     balance: float = 0.0
     plan: str
     transactions: List[str] = []
