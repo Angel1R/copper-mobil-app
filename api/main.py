@@ -152,23 +152,18 @@ def create_user(user: UserInput):
 # 🔐 Login con verificación de hash
 @app.post("/api/auth/login")
 def login_user(data: dict = Body(...)):
-    login_id = data.get("login")
+    phone = data.get("phone")
     password = data.get("password")
 
-    if not login_id or not password:
+    if not phone or not password:
         raise HTTPException(status_code=400, detail="Faltan datos")
 
-    user = users_collection.find_one({
-        "$or": [{"phone": login_id}, {"email": login_id}]
-    })
-
-    if not user or not verify_password(password, user.get("password")):
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    
-    hashed = user.get("password", "")
-    if not hashed.startswith("$2b$") or not verify_password(password, hashed):
+    # Busca solo por teléfono
+    user = users_collection.find_one({"phone": phone})
+    if not user or not verify_password(password, user["password"]):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
+    # Campos requeridos
     for campo in ["name", "plan", "balance"]:
         if campo not in user:
             raise HTTPException(status_code=500, detail=f"Campo faltante: {campo}")
@@ -177,10 +172,10 @@ def login_user(data: dict = Body(...)):
         "message": "Login exitoso",
         "user_id": str(user["_id"]),
         "name": user["name"],
-        "email": user.get("email", ""),
-        "plan": user["plan"],
         "balance": user["balance"]
     }
+
+VALID_LADAS = ["+52", "+1", "+57"]  # México, USA, Colombia...
 
 @app.post("/api/auth/send-otp")
 def enviar_otp(data: dict = Body(...)):
@@ -190,16 +185,31 @@ def enviar_otp(data: dict = Body(...)):
     if not phone:
         raise HTTPException(status_code=400, detail="Falta el número")
 
-    # ─── NUEVO BLOQUEO ─────────────────────────
+    # ─── BLOQUEO NÚMERO YA REGISTRADO ───────────────────
     if users_collection.find_one({"phone": phone}):
         raise HTTPException(
             status_code=409,
             detail="El número ya está registrado. Por favor inicia sesión."
         )
-    # ─────────────────────────────────────────────
+    # ─────────────────────────────────────────────────────
 
-    if not phone.startswith("+52") or len(phone) < 12:
-        raise HTTPException(status_code=400, detail="Formato inválido (+52XXXXXXXXXX)")
+    # ─── VALIDAR LADA DINÁMICA ──────────────────────────
+    if not any(phone.startswith(lada) for lada in VALID_LADAS):
+        allowed = ", ".join(VALID_LADAS)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Lada inválida. Usa uno de estos prefijos: {allowed}"
+        )
+    # ─────────────────────────────────────────────────────
+
+    # ─── VALIDAR LONGITUD MÍNIMA ───────────────────────
+    lada = next(l for l in VALID_LADAS if phone.startswith(l))
+    if len(phone) < len(lada) + 7:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Número demasiado corto para la lada {lada}"
+        )
+    # ─────────────────────────────────────────────────────
 
     code = str(randint(100000, 999999))
     mensaje_sms = f"Tu código Copper Mobil es: {code}"
@@ -216,6 +226,7 @@ def enviar_otp(data: dict = Body(...)):
         raise HTTPException(status_code=500, detail="Error al enviar el código por SMS")
 
     return {"message": "Código enviado correctamente"}
+
 
 
 # Validar código OTP
