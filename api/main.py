@@ -184,6 +184,7 @@ def login_user(data: dict = Body(...)):
 
 @app.post("/api/auth/send-otp")
 def enviar_otp(data: dict = Body(...)):
+    otp_collection.delete_many({"expiresAt": {"$lt": datetime.utcnow()}, "verified": {"$ne": True}})
     phone = data.get("phone")
     if not phone:
         raise HTTPException(status_code=400, detail="Falta el número")
