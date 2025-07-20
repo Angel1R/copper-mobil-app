@@ -184,10 +184,19 @@ def login_user(data: dict = Body(...)):
 
 @app.post("/api/auth/send-otp")
 def enviar_otp(data: dict = Body(...)):
-    otp_collection.delete_many({"expiresAt": {"$lt": datetime.utcnow()}, "verified": {"$ne": True}})
+    limpiar_codigos_expirados()
+
     phone = data.get("phone")
     if not phone:
         raise HTTPException(status_code=400, detail="Falta el número")
+
+    # ─── NUEVO BLOQUEO ─────────────────────────
+    if users_collection.find_one({"phone": phone}):
+        raise HTTPException(
+            status_code=409,
+            detail="El número ya está registrado. Por favor inicia sesión."
+        )
+    # ─────────────────────────────────────────────
 
     if not phone.startswith("+52") or len(phone) < 12:
         raise HTTPException(status_code=400, detail="Formato inválido (+52XXXXXXXXXX)")
