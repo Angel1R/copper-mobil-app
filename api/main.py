@@ -105,7 +105,10 @@ def enviar_sms(destino: str, mensaje: str):
     except Exception as e:
         print("❌ Error al enviar con Vonage:", e)
         return None
-
+    
+def limpiar_codigos_expirados():
+    resultado = otp_collection.delete_many({"expiresAt": {"$lt": datetime.utcnow()}, "verified": {"$ne": True}})
+    print(f"🧹 OTPs vencidos eliminados: {resultado.deleted_count}")
 
 # 🧱 Hashing
 def hash_password(password: str) -> str:
@@ -118,18 +121,22 @@ def verify_password(plain, hashed) -> bool:
 def create_user(user: UserInput):
     if users_collection.find_one({"phone": user.phone}):
         return JSONResponse(status_code=400, content={"detail": "Teléfono ya registrado"})
+
     if user.email and users_collection.find_one({"email": user.email}):
         return JSONResponse(status_code=400, content={"detail": "Correo ya registrado"})
-    if not otp_collection.find_one({"phone": user.phone}):
-        raise HTTPException(status_code=403, detail="Número aún no verificado")
 
+    verificado = otp_collection.find_one({"phone": user.phone, "verified": True})
+    if not verificado:
+        raise HTTPException(status_code=403, detail="Número aún no verificado")
 
     user_data = user.dict()
     user_data["password"] = hash_password(user.password)
-    print("🔐 Password hasheada:", user_data["password"])  # Aquí se muestra el hash generado
     user_data["createdAt"] = datetime.utcnow()
 
     inserted_user = users_collection.insert_one(user_data)
+
+    # 🔐 Limpieza del estado de verificación
+    otp_collection.delete_many({"phone": user.phone})
 
     return UserResponse(
         user_id=str(inserted_user.inserted_id),
@@ -139,6 +146,7 @@ def create_user(user: UserInput):
         balance=user.balance,
         plan=user.plan
     )
+
 
 
 # 🔐 Login con verificación de hash
@@ -209,6 +217,9 @@ def validar_otp(data: dict = Body(...)):
     if not phone or not code:
         raise HTTPException(status_code=400, detail="Faltan datos")
 
+    # 🧹 Limpiar códigos vencidos antes de verificar
+    otp_collection.delete_many({"expiresAt": {"$lt": datetime.utcnow()}})
+
     registro = otp_collection.find_one({"phone": phone})
     if not registro:
         raise HTTPException(status_code=404, detail="No se encontró código para ese número")
@@ -220,9 +231,16 @@ def validar_otp(data: dict = Body(...)):
         otp_collection.delete_many({"phone": phone})
         raise HTTPException(status_code=410, detail="Código expirado")
 
+    # ✅ Guardar estado "verificado"
     otp_collection.delete_many({"phone": phone})
+    otp_collection.insert_one({
+        "phone": phone,
+        "verified": True,
+        "verifiedAt": datetime.utcnow()
+    })
 
     return {"message": "Código válido"}
+
 
 
 # Crear nuevo plan y notificar con Pusher
