@@ -21,7 +21,7 @@ class UserResponse(BaseModel):
     user_id: str
     name: str
     phone: str
-    email: EmailStr
+    email: Optional[EmailStr] = None
     balance: float
     plan: str
 

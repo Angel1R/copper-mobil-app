@@ -10,6 +10,7 @@ import pusher
 import mercadopago
 from passlib.context import CryptContext
 from random import randint
+import requests
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -89,6 +90,23 @@ def health_check():
 def ping():
     return {"status": "ok", "timestamp": datetime.utcnow()}
 
+def enviar_sms(destino: str, mensaje: str):
+    try:
+        r = requests.post("https://rest.nexmo.com/sms/json", data={
+            "api_key": os.getenv("VONAGE_API_KEY"),
+            "api_secret": os.getenv("VONAGE_API_SECRET"),
+            "to": destino,
+            "from": "CopperMobil",
+            "text": mensaje
+        })
+        print("📤 Vonage SMS enviado a:", destino)
+        print("📦 Respuesta Vonage:", r.json())
+        return r.status_code
+    except Exception as e:
+        print("❌ Error al enviar con Vonage:", e)
+        return None
+
+
 # 🧱 Hashing
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
@@ -102,10 +120,13 @@ def create_user(user: UserInput):
         return JSONResponse(status_code=400, content={"detail": "Teléfono ya registrado"})
     if user.email and users_collection.find_one({"email": user.email}):
         return JSONResponse(status_code=400, content={"detail": "Correo ya registrado"})
+    if not otp_collection.find_one({"phone": user.phone}):
+        raise HTTPException(status_code=403, detail="Número aún no verificado")
+
 
     user_data = user.dict()
     user_data["password"] = hash_password(user.password)
-    print("🔐 Password hasheada:", user_data["password"])  # 👈 Aquí se muestra el hash generado
+    print("🔐 Password hasheada:", user_data["password"])  # Aquí se muestra el hash generado
     user_data["createdAt"] = datetime.utcnow()
 
     inserted_user = users_collection.insert_one(user_data)
@@ -135,6 +156,10 @@ def login_user(data: dict = Body(...)):
 
     if not user or not verify_password(password, user.get("password")):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+    
+    hashed = user.get("password", "")
+    if not hashed.startswith("$2b$") or not verify_password(password, hashed):
+        raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     for campo in ["name", "plan", "balance"]:
         if campo not in user:
@@ -149,25 +174,31 @@ def login_user(data: dict = Body(...)):
         "balance": user["balance"]
     }
 
-# Enviar código OTP
 @app.post("/api/auth/send-otp")
 def enviar_otp(data: dict = Body(...)):
     phone = data.get("phone")
     if not phone:
         raise HTTPException(status_code=400, detail="Falta el número")
 
+    if not phone.startswith("+52") or len(phone) < 12:
+        raise HTTPException(status_code=400, detail="Formato inválido (+52XXXXXXXXXX)")
+
     code = str(randint(100000, 999999))
-    otp_collection.delete_many({"phone": phone})  # limpiar previos
+    mensaje_sms = f"Tu código Copper Mobil es: {code}"
+
+    otp_collection.delete_many({"phone": phone})
     otp_collection.insert_one({
         "phone": phone,
         "code": code,
         "expiresAt": datetime.utcnow() + timedelta(minutes=2)
     })
 
-    # Aquí iría la integración real con API SMS externa
-    print(f"🧪 Código generado para {phone}: {code}")
+    status_envio = enviar_sms(phone, mensaje_sms)
+    if status_envio != 200:
+        raise HTTPException(status_code=500, detail="Error al enviar el código por SMS")
 
-    return {"message": "Código enviado"}
+    return {"message": "Código enviado correctamente"}
+
 
 # Validar código OTP
 @app.post("/api/auth/validate-otp")
@@ -179,12 +210,21 @@ def validar_otp(data: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Faltan datos")
 
     registro = otp_collection.find_one({"phone": phone})
-    if not registro or registro["code"] != code or registro["expiresAt"] < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Código inválido o expirado")
+    if not registro:
+        raise HTTPException(status_code=404, detail="No se encontró código para ese número")
+
+    if registro["code"] != code:
+        raise HTTPException(status_code=401, detail="Código incorrecto")
+
+    if registro["expiresAt"] < datetime.utcnow():
+        otp_collection.delete_many({"phone": phone})
+        raise HTTPException(status_code=410, detail="Código expirado")
+
+    otp_collection.delete_many({"phone": phone})
 
     return {"message": "Código válido"}
 
-    
+
 # Crear nuevo plan y notificar con Pusher
 @app.post("/api/planes")
 def crear_plan(plan: PlanModel):
