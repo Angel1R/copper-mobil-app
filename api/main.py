@@ -242,7 +242,10 @@ def validar_otp(data: dict = Body(...)):
 
     return {"message": "Código válido"}
 
-
+@app.get("/api/users/existe")
+def existe(phone: str):
+    existe = users_collection.find_one({"phone": phone})
+    return {"registrado": bool(existe)}
 
 # Crear nuevo plan y notificar con Pusher
 @app.post("/api/planes")
