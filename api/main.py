@@ -158,12 +158,16 @@ def login_user(data: dict = Body(...)):
     if not phone or not password:
         raise HTTPException(status_code=400, detail="Faltan datos")
 
-    # Busca solo por teléfono
+    # 1) Usuario no existe
     user = users_collection.find_one({"phone": phone})
-    if not user or not verify_password(password, user["password"]):
+    if not user:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+
+    # 2) Contraseña incorrecta
+    if not verify_password(password, user.get("password", "")):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
-    # Campos requeridos
+    # Verificar campos obligatorios
     for campo in ["name", "plan", "balance"]:
         if campo not in user:
             raise HTTPException(status_code=500, detail=f"Campo faltante: {campo}")
