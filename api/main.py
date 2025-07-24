@@ -14,7 +14,7 @@ import requests
 import logging
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+logging.basicConfig(level=logging.INFO)
 mp_sdk = mercadopago.SDK("APP_USR-6750690243481661-070418-e929368f48abae356c72c4e855776f62-2531088887")
 
 from models import (
@@ -50,7 +50,6 @@ app.add_middleware(
 load_dotenv(dotenv_path="./api/.env")
 
 router = APIRouter(prefix="/api/pago", tags=["Pago"])
-logging.basicConfig(level=logging.INFO)
 
 # 📡 Inicializar Pusher
 pusher_client = pusher.Pusher(
@@ -491,7 +490,7 @@ async def crear_preferencia_pago(pago: PaymentRequest):
         )
 
     
-@app.post("/api/pago/mercadopago")
+''' @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):
     # 1) Token y entorno
     env   = os.getenv("MP_ENV", "production")
@@ -536,7 +535,7 @@ def crear_preferencia_pago(req: PaymentRequest):
     }
 
     resp = sdk.preference().create(pref)["response"]
-    return {"init_point": resp["init_point"]}
+    return {"init_point": resp["init_point"]} '''
 
 @app.get("/api/pago/validar")
 def validar_pago(request: Request):
@@ -709,3 +708,5 @@ def debug_cors(request: Request):
         "origin": request.headers.get("origin"),
         "host": request.headers.get("host")
     }
+
+app.include_router(router)
