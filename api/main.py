@@ -433,62 +433,62 @@ def crear_preferencia_pago(plan: dict = Body(...)):
         
 @router.post("/mercadopago")
 async def crear_preferencia_pago(pago: PaymentRequest):
-    # 1. Construir payload
+    # 0) Busca al usuario y su email
+    usuario = users_collection.find_one({"_id": ObjectId(pago.user_id)})
+    if not usuario or "email" not in usuario:
+        raise HTTPException(404, "Usuario no encontrado o sin email")
+    email = usuario["email"]
+
+    # 1) Construir payload YA con email
     data = {
         "items": [{
-            "title": pago.plan.name,
-            "quantity": 1,
-            "unit_price": pago.plan.price,
+            "title":       pago.plan.name,
+            "quantity":    1,
+            "unit_price":  pago.plan.price,
             "description": f"{pago.plan.data_limit}, beneficios: {', '.join(pago.plan.benefits)}"
         }],
-        "payer": {"id": pago.user_id},
-        "back_urls": {
-            "success": "https://tu-dominio.com/exito",
-            "failure": "https://tu-dominio.com/fracaso",
-            "pending": "https://tu-dominio.com/pendiente"
+
+        "payer": {
+            "email": email
         },
+
+        "back_urls": {
+            "success": "https://coppermobile.com/exito",
+            "failure": "https://coppermobile.com/fracaso",
+            "pending": "https://coppermobile.com/pendiente"
+        },
+
         "external_reference": pago.user_id
     }
     logging.info("▶️ Payload a MercadoPago: %s", data)
 
     try:
-        # 2. Llamada al SDK
+        # 2) Llamada al SDK
         resultado = mp_sdk.preference().create(data)
-        resp = resultado.get("response", {})
-        
-        # 3. Loguear las keys que trae la respuesta
+        resp      = resultado.get("response", {})
+
         logging.info("🔍 Claves en MP response: %s", list(resp.keys()))
         logging.info("📦 Contenido completo de response: %s", resp)
 
-        # 4. Buscar init_point o sandbox_init_point
+        # 3) Extrae init_point (o sandbox_init_point)
         init_url = resp.get("init_point") or resp.get("sandbox_init_point")
         if not init_url:
-            # Devolvemos detalle con las keys y contenido para que el front lo vea
             detail = {
-                "message": "init_point no encontrado en la respuesta de MercadoPago",
+                "message":        "init_point no encontrado en la respuesta de MercadoPago",
                 "available_keys": list(resp.keys()),
-                "full_response": resp
+                "full_response":  resp
             }
             logging.error("❌ %s", detail)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=detail
-            )
+            raise HTTPException(500, detail=detail)
 
-        # 5. Retornar la URL de pago
+        # 4) Retornar la URL de pago
         return {"init_point": init_url}
 
     except HTTPException:
-        # Re-lanzar tu propio HTTPException para que llegue intacto al front
         raise
     except Exception as e:
-        # Cualquier otro error inesperado
         logging.error("❌ Error creando preferencia MP", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": str(e)}
-        )
-
+        raise HTTPException(500, detail=str(e))
     
 ''' @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):
