@@ -11,8 +11,11 @@ import mercadopago
 from passlib.context import CryptContext
 from random import randint
 import requests
+import logging
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+mp_sdk = mercadopago.SDK("APP_USR-6750690243481661-070418-e929368f48abae356c72c4e855776f62-2531088887")
 
 from models import (
     UserModel, PlanModel, UserInput, UserResponse, TransactionModel, 
@@ -425,6 +428,37 @@ def crear_preferencia_pago(plan: dict = Body(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}") '''
+        
+@app.post("/mercadopago")
+async def crear_preferencia_pago(pago: PaymentRequest):
+    # Aquí ya has definido tu payload `data`
+    data = {
+        "items": [{
+            "title": pago.plan.name,
+            "quantity": 1,
+            "unit_price": pago.plan.price,
+            "description": f"{pago.plan.data_limit}, beneficios: {', '.join(pago.plan.benefits)}"
+        }],
+        "payer": {"id": pago.user_id},
+        "back_urls": { ... },
+        "external_reference": pago.user_id
+    }
+
+    # Ahora sí puedes llamar al SDK y hacer el logging
+    try:
+        resultado = mp_sdk.preference().create(data)
+        resp = resultado["response"]
+
+        logging.info(f"🔍 Claves en MP response: {list(resp.keys())}")
+        logging.info(f"📦 Contenido completo: {resp}")
+
+        init_url = resp.get("init_point") or resp.get("sandbox_init_point")
+        return {"init_point": init_url}
+
+    except Exception as e:
+        logging.error("❌ Error creando preferencia MP", exc_info=True)
+        raise HTTPException(status_code=500, detail="Error interno creando preferencia de pago")
+
     
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):
