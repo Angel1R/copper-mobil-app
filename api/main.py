@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Body, Request, Path
+from fastapi import APIRouter, FastAPI, HTTPException, Body, Request, Path, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from bson import ObjectId
@@ -48,6 +48,9 @@ app.add_middleware(
 )
 
 load_dotenv(dotenv_path="./api/.env")
+
+router = APIRouter(prefix="/api/pago", tags=["Pago"])
+logging.basicConfig(level=logging.INFO)
 
 # 📡 Inicializar Pusher
 pusher_client = pusher.Pusher(
@@ -429,9 +432,9 @@ def crear_preferencia_pago(plan: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}") '''
         
-@app.post("/mercadopago")
+@router.post("/mercadopago")
 async def crear_preferencia_pago(pago: PaymentRequest):
-    # Aquí ya has definido tu payload `data`
+    # 1. Construir payload
     data = {
         "items": [{
             "title": pago.plan.name,
@@ -440,24 +443,52 @@ async def crear_preferencia_pago(pago: PaymentRequest):
             "description": f"{pago.plan.data_limit}, beneficios: {', '.join(pago.plan.benefits)}"
         }],
         "payer": {"id": pago.user_id},
-        "back_urls": { ... },
+        "back_urls": {
+            "success": "https://tu-dominio.com/exito",
+            "failure": "https://tu-dominio.com/fracaso",
+            "pending": "https://tu-dominio.com/pendiente"
+        },
         "external_reference": pago.user_id
     }
+    logging.info("▶️ Payload a MercadoPago: %s", data)
 
-    # Ahora sí puedes llamar al SDK y hacer el logging
     try:
+        # 2. Llamada al SDK
         resultado = mp_sdk.preference().create(data)
-        resp = resultado["response"]
+        resp = resultado.get("response", {})
+        
+        # 3. Loguear las keys que trae la respuesta
+        logging.info("🔍 Claves en MP response: %s", list(resp.keys()))
+        logging.info("📦 Contenido completo de response: %s", resp)
 
-        logging.info(f"🔍 Claves en MP response: {list(resp.keys())}")
-        logging.info(f"📦 Contenido completo: {resp}")
-
+        # 4. Buscar init_point o sandbox_init_point
         init_url = resp.get("init_point") or resp.get("sandbox_init_point")
+        if not init_url:
+            # Devolvemos detalle con las keys y contenido para que el front lo vea
+            detail = {
+                "message": "init_point no encontrado en la respuesta de MercadoPago",
+                "available_keys": list(resp.keys()),
+                "full_response": resp
+            }
+            logging.error("❌ %s", detail)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=detail
+            )
+
+        # 5. Retornar la URL de pago
         return {"init_point": init_url}
 
+    except HTTPException:
+        # Re-lanzar tu propio HTTPException para que llegue intacto al front
+        raise
     except Exception as e:
+        # Cualquier otro error inesperado
         logging.error("❌ Error creando preferencia MP", exc_info=True)
-        raise HTTPException(status_code=500, detail="Error interno creando preferencia de pago")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": str(e)}
+        )
 
     
 @app.post("/api/pago/mercadopago")
