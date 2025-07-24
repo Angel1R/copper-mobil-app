@@ -428,19 +428,27 @@ def crear_preferencia_pago(plan: dict = Body(...)):
     
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):
-    # 1) Obtén y valida usuario
+    # 1) Token y entorno
+    env   = os.getenv("MP_ENV", "production")
+    
+    if env == "production":
+        token = os.getenv("MP_ACCESS_TOKEN_PROD")
+    else:
+        token = os.getenv("MP_ACCESS_TOKEN_SANDBOX")
+
+    if not token:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Token de MP no configurado para el entorno {env}"
+        )
+
+    # 2) Obtén y valida usuario
     usuario = users_collection.find_one({"_id": ObjectId(req.user_id)})
     if not usuario:
         raise HTTPException(404, "Usuario no encontrado")
     email = usuario.get("email")
     if not email:
         raise HTTPException(400, "Debes registrar tu correo antes de pagar")
-
-    # 2) Token y entorno
-    env   = os.getenv("MP_ENV", "production")
-    token = os.getenv(f"MP_ACCESS_TOKEN_{env.upper()}")
-    if not token:
-        raise HTTPException(500, "Token de MP no configurado")
     
     print("🔑 TOKEN EN USO:", repr(token))
     print("🌎 Entorno:", env)
