@@ -15,9 +15,9 @@ import requests
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 from models import (
-    UserModel, PlanModel, UserInput, UserResponse,
-    TransactionModel, DataUsageModel, SupportTicketModel,
-    TicketDB, TicketInput, FAQModel, ChipRequest
+    UserModel, PlanModel, UserInput, UserResponse, TransactionModel, 
+    DataUsageModel, SupportTicketModel, TicketDB, TicketInput, 
+    FAQModel, ChipRequest, EmailUpdate, PaymentRequest
 )
 from database import (
     users_collection, plans_collection, support_tickets_collection,
@@ -135,7 +135,7 @@ def create_user(user: UserInput):
 
     inserted_user = users_collection.insert_one(user_data)
 
-    # 🔐 Limpieza del estado de verificación
+    # �� Limpieza del estado de verificación
     otp_collection.delete_many({"phone": user.phone})
 
     return UserResponse(
@@ -146,7 +146,6 @@ def create_user(user: UserInput):
         balance=user.balance,
         plan=user.plan
     )
-
 
 
 # 🔐 Login con verificación de hash
@@ -178,6 +177,37 @@ def login_user(data: dict = Body(...)):
         "name": user["name"],
         "balance": user["balance"]
     }
+
+@app.get("/api/auth/profile/{user_id}", response_model=UserResponse)
+def get_profile(user_id: str):
+    user = users_collection.find_one({ "_id": ObjectId(user_id) })
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+
+    return UserResponse(
+        user_id = str(user["_id"]),
+        name    = user["name"],
+        phone   = user["phone"],
+        email   = user.get("email"),
+        balance = user["balance"],
+        plan    = user["plan"]
+    )
+
+@app.patch("/api/auth/update-email")
+def update_email(data: EmailUpdate = Body(...)):
+    user = users_collection.find_one({ "_id": ObjectId(data.user_id) })
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+
+    # Opcional: valida que no exista otro usuario con ese email
+    if users_collection.find_one({ "email": data.email, "_id": {"$ne": user["_id"]} }):
+        raise HTTPException(409, "Correo ya está en uso")
+
+    users_collection.update_one(
+        { "_id": ObjectId(data.user_id) },
+        { "$set": { "email": data.email } }
+    )
+    return { "message": "Email actualizado" }
 
 VALID_LADAS = ["+52", "+1", "+57"]  # México, USA, Colombia...
 
@@ -230,7 +260,6 @@ def enviar_otp(data: dict = Body(...)):
         raise HTTPException(status_code=500, detail="Error al enviar el código por SMS")
 
     return {"message": "Código enviado correctamente"}
-
 
 
 # Validar código OTP
@@ -295,7 +324,6 @@ def obtener_planes():
         notificar_api_offline(f"Error al obtener planes: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno al obtener los planes")
 
-
 # Obtener plan de un usuario
 @app.get("/api/planes/{user_id}")
 def get_user_plan(user_id: str):
@@ -339,7 +367,6 @@ def registrar_recarga(datos: dict = Body(...)):
         raise HTTPException(status_code=500, detail=f"Error al registrar recarga: {e}")
 
 
-
 # MERCADOPAGO
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
@@ -348,8 +375,7 @@ def crear_preferencia_pago(plan: dict = Body(...)):
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
 
-        print("🔑 TOKEN EN USO:", repr(token))
-        print("🌎 Entorno:", env)
+        
 
         # 2. Validar token
         if not isinstance(token, str) or not token.strip():
@@ -401,6 +427,45 @@ def crear_preferencia_pago(plan: dict = Body(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}")
+    
+@app.post("/api/pago/mercadopago")
+def crear_preferencia_pago(req: PaymentRequest):
+    # 1) Obtén y valida usuario
+    usuario = users_collection.find_one({"_id": ObjectId(req.user_id)})
+    if not usuario:
+        raise HTTPException(404, "Usuario no encontrado")
+    email = usuario.get("email")
+    if not email:
+        raise HTTPException(400, "Debes registrar tu correo antes de pagar")
+
+    # 2) Token y entorno
+    env   = os.getenv("MP_ENV", "production")
+    token = os.getenv(f"MP_ACCESS_TOKEN_{env.upper()}")
+    if not token:
+        raise HTTPException(500, "Token de MP no configurado")
+    
+    print("🔑 TOKEN EN USO:", repr(token))
+    print("🌎 Entorno:", env)
+
+    # 3) Arma la preferencia
+    sdk = mercadopago.SDK(token)
+    pref = {
+      "items": [{
+        "title":      req.plan.name,
+        "quantity":   1,
+        "unit_price": req.plan.price
+      }],
+      "payer":  {"email": email},
+      "back_urls": {
+        "success": os.getenv("MP_BACK_SUCCESS"),
+        "failure": os.getenv("MP_BACK_FAILURE"),
+        "pending": os.getenv("MP_BACK_PENDING")
+      },
+      "auto_return": "approved"
+    }
+
+    resp = sdk.preference().create(pref)["response"]
+    return {"init_point": resp["init_point"]}
 
 @app.get("/api/pago/validar")
 def validar_pago(request: Request):
@@ -428,6 +493,7 @@ def validar_pago(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al validar el pago: {e}")
     
+
 # Preguntas frecuentas (FAQ)
 @app.get("/api/faq", response_model=List[FAQModel])
 def obtener_faq():
@@ -507,7 +573,8 @@ def actualizar_estado_ticket(ticket_id: str, cambios: dict = Body(...)):
         return {"message": "Ticket actualizado correctamente"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar el ticket: {e}")
-    
+
+
 # Portabilidad
 @app.post("/api/chip/solicitud")
 def crear_solicitud_chip(data: dict = Body(...)):
@@ -548,7 +615,6 @@ def obtener_chips_usuario(user_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener historial de chips: {e}")
 
-
 @app.put("/api/chips/{chip_id}")
 def actualizar_chip(chip_id: str, cambios: dict = Body(...)):
     try:
@@ -561,8 +627,6 @@ def actualizar_chip(chip_id: str, cambios: dict = Body(...)):
         return {"message": "Solicitud de chip actualizada"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al actualizar solicitud: {e}")
-
-
     
 # Endpoint para depurar CORS
 @app.get("/api/debug")

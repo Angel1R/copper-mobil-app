@@ -25,6 +25,10 @@ class UserResponse(BaseModel):
     balance: float
     plan: str
 
+class EmailUpdate(BaseModel):
+    user_id: str
+    email:   EmailStr
+
 # Modelo para Planes
 class PlanModel(BaseModel):
     name: str
@@ -32,6 +36,11 @@ class PlanModel(BaseModel):
     data_limit: str
     validity_days: int
     benefits: List[str]
+
+# Modelo para la petición de pago, que incluye user_id + tu PlanModel
+class PaymentRequest(BaseModel):
+    user_id: str
+    plan:    PlanModel
 
 # Modelo para Transacciones
 class TransactionModel(BaseModel):
