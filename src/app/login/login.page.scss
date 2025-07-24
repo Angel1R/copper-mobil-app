@@ -1,35 +1,74 @@
 ion-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 24px;
+  --background: linear-gradient(to bottom, #1f1c2c 0%, #1f1c2c 30%, #2c2c2c 60%, #2c2c2c 100%);
+  color: #fff;
+  padding-top: 12px;
+}
 
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+
+ion-header {
+  ion-toolbar {
+    --background: linear-gradient(to left, #e1084d, #808093);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    ion-title {
+      font-size: 24px;
+      font-weight: 600;
+      text-shadow: 0 0 4px #ffffff;
+    }
+
+    ion-icon {
+      font-size: 24px;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+    }
+  }
+}
+
+ion-card[color="warning"] {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: #2e2e2e;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+form {
+  margin-top: 24px;
+  padding: 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+ion-item {
+  --background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
+  ion-label {
+    color: #ffe;
+  }
+  ion-input {
+    color: #fff;
+  }
+}
+
+ion-note[color="danger"] {
+  font-style: italic;
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+ion-button {
+  margin-top: 20px;
+  font-weight: bold;
+  border-radius: 10px;
+
+  &[type="submit"] {
+    --background: #20c997;
+    --color: #fff;
+    box-shadow: 0 0 10px #20c997;
   }
 
-  ion-item {
-    --highlight-color-focused: var(--ion-color-primary);
-  }
-
-  ion-note {
-    font-size: 13px;
-    margin-left: 12px;
-    margin-top: -10px;
-    color: var(--ion-color-danger);
-  }
-
-  ion-button {
-    margin-top: 12px;
-    font-weight: 600;
-  }
-
-  ion-button[fill="clear"] {
-    margin-top: 4px;
-    --color: var(--ion-color-medium);
-    text-decoration: underline;
-    font-size: 15px;
+  &[fill="clear"] {
+    color: #007bff;
+    font-size: 14px;
   }
 }

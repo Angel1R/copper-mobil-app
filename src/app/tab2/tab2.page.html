@@ -1,7 +1,7 @@
 <ion-content>
 
-  <!-- Segmento para navegación entre planes y chips -->
-  <ion-segment [(ngModel)]="vistaSeleccionada">
+  <!-- 🔁 Segmento de navegación -->
+  <ion-segment [(ngModel)]="vistaSeleccionada" class="fade-in-segment">
     <ion-segment-button value="planes">
       <ion-label>Planes</ion-label>
     </ion-segment-button>
@@ -10,8 +10,8 @@
     </ion-segment-button>
   </ion-segment>
 
-  <!-- Contenido: Planes -->
-  <div *ngIf="vistaSeleccionada === 'planes'">
+  <!-- 📶 PLANES -->
+  <div *ngIf="vistaSeleccionada === 'planes'" class="fade-in">
     <ion-card color="danger" *ngIf="errorAlCargarPlanes">
       <ion-card-header>
         <ion-card-title>No se pudieron cargar los planes</ion-card-title>
@@ -22,7 +22,8 @@
     </ion-card>
 
     <ion-list *ngIf="!cargando && planes.length > 0; else estadoCarga">
-      <ion-item *ngFor="let plan of planes">
+      <ion-item *ngFor="let plan of planes" class="plan-item">
+        <ion-icon name="cellular-outline" slot="start" class="plan-icon"></ion-icon>
         <ion-label>
           <h2>{{ plan.name }} - ${{ plan.price }}</h2>
           <p>{{ plan.data_limit }} por {{ plan.validity_days }} días</p>
@@ -37,9 +38,9 @@
     </ion-list>
 
     <ng-template #estadoCarga>
-      <div *ngIf="cargando; else sinPlanes">
+      <div *ngIf="cargando; else sinPlanes" style="text-align: center;">
         <ion-spinner name="dots"></ion-spinner>
-        <p style="text-align: center;">Cargando planes...</p>
+        <p>Cargando planes...</p>
       </div>
     </ng-template>
 
@@ -48,13 +49,22 @@
     </ng-template>
   </div>
 
-  <!-- Contenido: Chips -->
-  <div *ngIf="vistaSeleccionada === 'chips'" style="padding: 12px;">
-    <ion-card>
+  <!-- 📦 CHIPS -->
+  <div *ngIf="vistaSeleccionada === 'chips'" style="padding: 12px;" class="fade-in-slide">
+    <ion-card class="chip-card">
       <ion-card-header>
         <ion-card-title>Chip físico o portabilidad</ion-card-title>
       </ion-card-header>
       <ion-card-content>
+
+        <!-- 🔖 Badge visual -->
+        <div class="chip-badge">
+          <ion-icon
+            [name]="chipForm.tipo === 'portabilidad' ? 'swap-horizontal' : 'add-circle-outline'"
+            class="badge-icon">
+          </ion-icon>
+          <span>{{ chipForm.tipo === 'portabilidad' ? 'Portabilidad' : 'Nuevo chip' }}</span>
+        </div>
 
         <!-- Tipo de solicitud -->
         <ion-radio-group [(ngModel)]="chipForm.tipo">
@@ -67,7 +77,6 @@
             <ion-label>Portabilidad</ion-label>
           </ion-item>
         </ion-radio-group>
-
 
         <!-- Nombre -->
         <ion-item [ngClass]="{ 'input-error': chipForm.nombre.trim() === '' }" button detail="false">
@@ -83,13 +92,13 @@
           <p class="input-alert">El nombre es obligatorio</p>
         </ion-text>
 
-        <!-- Teléfono (solo si portabilidad) -->
+        <!-- Teléfono -->
         <div *ngIf="chipForm.tipo === 'portabilidad'">
           <ion-item [ngClass]="{ 'input-error': !telefonoValido }" button detail="false">
             <ion-input
               type="tel"
               inputmode="numeric"
-              maxlength="10"
+              maxlength="13"
               [(ngModel)]="chipForm.telefono"
               required
               placeholder="Teléfono a portar"

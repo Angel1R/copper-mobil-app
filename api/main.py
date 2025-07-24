@@ -368,14 +368,12 @@ def registrar_recarga(datos: dict = Body(...)):
 
 
 # MERCADOPAGO
-@app.post("/api/pago/mercadopago")
+''' @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(plan: dict = Body(...)):
     try:
         # 1. Obtener entorno y token
         env = os.getenv("MP_ENV", "sandbox")
         token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
-
-        
 
         # 2. Validar token
         if not isinstance(token, str) or not token.strip():
@@ -426,7 +424,7 @@ def crear_preferencia_pago(plan: dict = Body(...)):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}") '''
     
 @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):

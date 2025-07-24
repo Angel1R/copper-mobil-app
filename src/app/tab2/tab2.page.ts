@@ -4,6 +4,8 @@ import { environment } from 'src/environments/environment';
 import Pusher, { Channel } from 'pusher-js';
 import { Browser } from '@capacitor/browser';
 import { App } from '@capacitor/app';
+import { ToastService } from '../services/toast.service';
+import { AlertController, NavController } from '@ionic/angular';
 
 @Component({
   selector: 'app-tab2',
@@ -12,13 +14,16 @@ import { App } from '@capacitor/app';
   standalone: false
 })
 export class Tab2Page implements OnInit, OnDestroy {
+  
   planes: any[] = [];
-  cargando: boolean = true;
-  pusher: Pusher | null = null;
-  canal: Channel | null = null;
-  errorAlCargarPlanes: boolean = false;
+  cargando = true;
+  errorAlCargarPlanes = false;
 
-  vistaSeleccionada: string = 'planes';
+  vistaSeleccionada = 'planes';
+
+  // Pusher
+  private pusher: Pusher | null = null;
+  private canal: Channel | null = null;
 
   chipForm = {
     tipo: 'nueva',
@@ -29,8 +34,14 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   enviandoSolicitud: boolean = false;
 
+  constructor(
+    private toast: ToastService,
+    private alertCtrl: AlertController,
+    private navCtrl: NavController
+  ) {}
+
   get telefonoValido(): boolean {
-    return /^[0-9]{10}$/.test(this.chipForm.telefono.trim());
+    return /^[0-9]{12}$/.test(this.chipForm.telefono.trim());
   }
 
   async ngOnInit() {
@@ -39,7 +50,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.configurarDeepLinks();
   }
 
-  configurarDeepLinks() {
+  private configurarDeepLinks() {
     App.addListener('appUrlOpen', async ({ url }) => {
       const parsed = new URL(url);
       const ruta = parsed.pathname;
@@ -53,50 +64,47 @@ export class Tab2Page implements OnInit, OnDestroy {
         });
 
         if (response.data.approved) {
-          alert('✅ Recarga confirmada con éxito');
+          this.toast.mostrarToast('✅ Recarga confirmada con éxito');
         } else {
-          alert('⚠️ El pago no fue aprobado');
+          this.toast.mostrarToast('⚠️ El pago no fue aprobado');
         }
       } else if (ruta === '/pago-fallido') {
-        alert('❌ El pago fue rechazado');
+        this.toast.mostrarToast('❌ El pago fue rechazado');
       } else if (ruta === '/pago-pendiente') {
-        alert('⏳ El pago está pendiente');
+        this.toast.mostrarToast('⏳ El pago está pendiente');
       }
     });
   }
 
-  async obtenerPlanes() {
-  this.cargando = true;
-  this.errorAlCargarPlanes = false; // Reinicia error
+  private async obtenerPlanes() {
+    this.cargando = true;
+    this.errorAlCargarPlanes = false; // Reinicia error
 
-  try {
-    const response = await Http.get({
-      url: `${environment.apiUrl}/planes`,
-      headers: {},
-      params: {}
-    });
-    this.planes = response.data || [];
-  } catch (error) {
-    console.error(' Error al obtener planes:', error);
-    this.errorAlCargarPlanes = true; // Marca el error específico
-    this.planes = [];
-  } finally {
-    this.cargando = false;
+    try {
+      const response = await Http.get({
+        url: `${environment.apiUrl}/planes`,
+        headers: {},
+        params: {}
+      });
+      this.planes = response.data || [];
+    } catch (error) {
+      console.error(' Error al obtener planes:', error);
+      this.errorAlCargarPlanes = true; // Marca el error específico
+      this.planes = [];
+    } finally {
+      this.cargando = false;
+    }
   }
-}
 
-
-  iniciarPusher() {
+  private iniciarPusher() {
     this.pusher = new Pusher(environment.pusherKey, {
       cluster: environment.pusherCluster
     });
 
     this.canal = this.pusher.subscribe('planes-channel') as Channel;
-
     this.canal.bind('planes_actualizados', () => {
       this.obtenerPlanes();
     });
-
     this.canal.bind('pusher:subscription_error', (status: any) => {
       console.error('❌ Error al suscribirse a Pusher:', status);
     });
@@ -105,11 +113,42 @@ export class Tab2Page implements OnInit, OnDestroy {
   async iniciarRecarga(plan: any) {
     const userId = localStorage.getItem('user_id');
 
-    if (!userId || userId.length < 10) {
-      alert('⚠️ Debes iniciar sesión correctamente para hacer una recarga');
+    if (!userId) {
+      this.toast.mostrarToast('⚠️ Inicia sesión correctamente para recargar');
       return;
     }
 
+    // 1) Traer perfil y comprobar email
+    let email: string | null = null;
+    try {
+      const perfil = await Http.get({
+        url: `${environment.apiUrl}/auth/profile/${userId}`
+      });
+      email = perfil.data.email;
+
+      if (!email) {
+        const alert = await this.alertCtrl.create({
+          header: 'Correo requerido',
+          message: 'Debes agregar un correo en tu perfil antes de recargar.',
+          buttons: [
+            { text: 'Cancelar', role: 'cancel' },
+            {
+              text: 'Ir a perfil',
+              handler: () => this.navCtrl.navigateForward('/perfil')
+            }
+          ]
+        });
+        await alert.present();
+        return;
+      }
+    } catch (err) {
+      console.error('❌ Error al obtener perfil:', err);
+      this.toast.mostrarToast('No se pudo verificar tu perfil', 'danger');
+      return;
+    }
+    // ────────────────────────────────────────────────────────────
+
+    // ── 2) Si llegamos aquí, SIEMPRE hay un email válido ──────
     const payload = {
       title: plan.name,
       price: plan.price,
@@ -128,12 +167,13 @@ export class Tab2Page implements OnInit, OnDestroy {
       if (initPoint) {
         await Browser.open({ url: initPoint });
       } else {
-        alert('No se pudo generar el enlace de pago');
+        this.toast.mostrarToast('No se pudo generar el enlace de pago');
       }
 
     } catch (error: any) {
       console.error('❌ Error al iniciar pago:', error);
-      alert(error?.error?.detail || 'Hubo un problema al contactar con el sistema de pagos');
+      this.toast.mostrarToast(error?.error?.detail || 'Hubo un problema al procesar el pago',
+        'danger');
     }
   }
 
@@ -147,7 +187,7 @@ export class Tab2Page implements OnInit, OnDestroy {
         : nombre.trim() !== '' && this.telefonoValido && direccion.trim() !== '';
 
     if (!userId || !datosValidos) {
-      alert('⚠️ Completa todos los campos correctamente antes de continuar');
+      this.toast.mostrarToast('⚠️ Completa todos los campos correctamente antes de continuar');
       return;
     }
 
@@ -172,7 +212,7 @@ export class Tab2Page implements OnInit, OnDestroy {
         params: {}
       });
 
-      alert('📦 Solicitud enviada correctamente');
+      this.toast.mostrarToast('📦 Solicitud enviada correctamente');
 
       const historialChip = JSON.parse(localStorage.getItem('historial_chip') || '[]');
       historialChip.push({ fecha: new Date().toISOString(), ...payload });
@@ -180,7 +220,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
       this.chipForm = { tipo: 'nueva', nombre: '', telefono: '', direccion: '' };
     } catch (error) {
-      alert('❌ Error al enviar la solicitud de chip');
+      this.toast.mostrarToast('❌ Error al enviar la solicitud de chip');
       console.error(error);
     } finally {
       this.enviandoSolicitud = false;

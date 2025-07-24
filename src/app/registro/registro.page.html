@@ -1,44 +1,118 @@
 <ion-header>
-  <ion-toolbar color="primary">
+  <ion-toolbar>
     <ion-title>Crear cuenta</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="ion-padding">
-  <form [formGroup]="form" (ngSubmit)="registrar()">
-    <ion-item>
-      <ion-label position="floating">Nombre</ion-label>
-      <ion-input formControlName="name"></ion-input>
-    </ion-item>
-    <ion-note color="danger" *ngIf="form.get('name')?.touched && form.get('name')?.invalid">
-      El nombre es obligatorio
-    </ion-note>
 
-    <ion-item>
-      <ion-label position="floating">Teléfono</ion-label>
-      <ion-input type="tel" formControlName="phone"></ion-input>
-    </ion-item>
-    <ion-note color="danger" *ngIf="form.get('phone')?.touched && form.get('phone')?.invalid">
-      El número debe tener al menos 8 dígitos
-    </ion-note>
+  <!-- Barra de progreso entre etapas -->
+  <ion-progress-bar value="0.5" *ngIf="step === 1" color="tertiary"></ion-progress-bar>
+  <ion-progress-bar value="1.0" *ngIf="step === 2" color="tertiary"></ion-progress-bar>
 
-    <ion-item>
-      <ion-label position="floating">Correo</ion-label>
-      <ion-input type="email" formControlName="email"></ion-input>
-    </ion-item>
-    <ion-note color="danger" *ngIf="form.get('email')?.touched && form.get('email')?.invalid">
-      Debe ser un correo válido
-    </ion-note>
+  <!-- Etapa 1 -->
+  <div *ngIf="step === 1" class="fade-in">
+    <form [formGroup]="formEtapa1">
 
-    <ion-item>
-      <ion-label position="floating">Contraseña</ion-label>
-      <ion-input type="password" formControlName="password"></ion-input>
-    </ion-item>
-    <ion-note color="danger" *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
-      Mínimo 6 caracteres
-    </ion-note>
+      <ion-item>
+        <ion-label position="floating">Nombre</ion-label>
+        <ion-input formControlName="name"></ion-input>
+      </ion-item>
 
-    <ion-button type="submit" expand="block" [disabled]="!form.valid">Crear cuenta</ion-button>
-    <ion-button fill="clear" expand="block" routerLink="/login">¿Ya tienes cuenta?</ion-button>
-  </form>
+      <ion-item>
+        <ion-label>País</ion-label>
+        <ion-select formControlName="lada" interface="popover">
+          <ion-select-option
+            *ngFor="let lada of ladas"
+            [value]="lada.code">
+            {{ lada.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+
+      <ion-item>
+        <ion-label position="floating">Número celular</ion-label>
+        <ion-input type="tel" formControlName="phone"></ion-input>
+      </ion-item>
+      <ion-note color="danger" *ngIf="numeroYaRegistrado" class="ion-margin-bottom">
+        ❗ Este número ya está registrado
+      </ion-note>
+
+      <ion-item>
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input type="password" formControlName="password"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Correo electrónico (opcional)</ion-label>
+        <ion-input type="email" formControlName="email"></ion-input>
+      </ion-item>
+      <ion-note color="danger"
+        *ngIf="formEtapa1.get('email')?.touched && formEtapa1.get('email')?.invalid">
+        Ingresa un correo válido
+      </ion-note>
+
+      <ion-button
+        expand="block"
+        (click)="enviarOTP()"
+        [disabled]="!formEtapa1.valid || enviandoOTP || numeroYaRegistrado">
+        <ion-spinner *ngIf="enviandoOTP" slot="start" name="dots"></ion-spinner>
+        Continuar
+      </ion-button>
+
+    </form>
+
+    <ion-button fill="clear" expand="block" routerLink="/login">
+      ¿Ya tienes cuenta?
+    </ion-button>
+  </div>
+
+  <!-- Etapa 2 -->
+  <div *ngIf="step === 2" class="fade-in">
+    <form [formGroup]="formEtapa2">
+
+      <ion-item>
+        <ion-label position="floating">Código SMS</ion-label>
+        <ion-input formControlName="otp" maxlength="6"></ion-input>
+      </ion-item>
+
+      <ion-note *ngIf="tiempoRestante > 0" color="medium">
+        Código válido por {{ tiempoRestante }} segundos
+      </ion-note>
+      <ion-note *ngIf="tiempoRestante <= 0" color="danger">
+        ⏳ Código expirado. Reenvíalo para continuar.
+      </ion-note>
+
+      <ion-note color="success" class="ion-text-center" *ngIf="tiempoRestante > 0">
+        📞 SMS enviado a ******{{ construirNumero().slice(-4) }}
+      </ion-note>
+
+      <ion-button
+        expand="block"
+        (click)="verificarOTP()"
+        [disabled]="formEtapa2.invalid || tiempoRestante <= 0 || enviandoValidacion">
+        <ion-spinner *ngIf="enviandoValidacion" slot="start" name="dots"></ion-spinner>
+        Verificar código
+      </ion-button>
+
+      <ion-button
+        fill="clear"
+        expand="block"
+        (click)="reenviarCodigo()"
+        [disabled]="enviandoReenvio">
+        Reenviar código
+      </ion-button>
+
+      <ion-button
+        expand="block"
+        color="danger"
+        *ngIf="tiempoRestante <= 0"
+        (click)="resetearRegistro()">
+        Volver a comenzar
+      </ion-button>
+
+    </form>
+  </div>
+
 </ion-content>

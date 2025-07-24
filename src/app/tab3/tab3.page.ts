@@ -8,11 +8,15 @@ import { Component, OnInit } from '@angular/core';
 })
 export class Tab3Page implements OnInit {
   cargando: boolean = true;
+  nombre: string = 'Usuario'; // Default por si no hay nombre en storage
 
   constructor() {}
 
   async ngOnInit() {
-    // Aquí se puede agregar cualquier lógica que necesite cargar al iniciar
+    const userName = localStorage.getItem('user_name');
+    if (userName) {
+      this.nombre = userName;
+    }
     this.cargando = false;
   }
 }

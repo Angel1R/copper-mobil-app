@@ -1,0 +1,79 @@
+ion-content {
+  --background: linear-gradient(to bottom, #1e1e2e, #2a2a3b);
+  color: #000000;
+  padding-top: 12px;
+}
+
+ion-searchbar {
+  margin: 12px;
+  --background: #ffffff;
+  --color: #fff;
+  --placeholder-color: #282121;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ticket-item {
+  border-left: 5px solid transparent;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  padding-left: 10px;
+  background-color: #2e2e3e;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: fadeInTicket 0.4s ease-out;
+  position: relative;
+}
+
+/* 🟢 Estado RESUELTO */
+.ticket-item.resuelto {
+  border-left-color: #20c997;
+}
+
+/* 🟠 Estado PENDIENTE */
+.ticket-item.pendiente {
+  border-left-color: #ffa94d;
+}
+
+/* 🏷️ Badge estado */
+.ticket-badge {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  font-size: 11px;
+  background-color: #333;
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-weight: bold;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ticket-badge.resuelto {
+  background-color: #20c997;
+}
+
+.ticket-badge.pendiente {
+  background-color: #ffa94d;
+}
+
+/* Título y detalles */
+.ticket-item h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.ticket-item p {
+  font-size: 12px;
+  color: #848484;
+  margin-top: 4px;
+}
+
+/* Animación suave */
+@keyframes fadeInTicket {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

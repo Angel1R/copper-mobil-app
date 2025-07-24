@@ -1,35 +1,120 @@
 ion-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  --background: linear-gradient(to bottom, #1e1e2e, #2a2a3b);
+  color: #eee;
+  padding-top: 12px;
+}
+
+/* === Contenedor del formulario === */
+form {
+  margin: 20px 12px;
+  background-color: #ffffff;   /* fondo blanco nítido */
+  border-radius: 14px;
   padding: 24px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  color: #333333;              /* texto principal oscuro */
+}
 
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+/* === Campos flotantes === */
+ion-item {
+  --background: transparent;   /* o #fafafa si lo prefieres */
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 16px;
+
+  ion-label {
+    color: #555555;            /* etiqueta gris oscuro */
+    font-weight: 500;
   }
 
-  ion-item {
-    --highlight-color-focused: var(--ion-color-primary);
+  ion-input, ion-select {
+    color: #222222;            /* texto de entrada oscuro */
   }
+}
 
-  ion-note {
-    font-size: 13px;
-    margin-left: 12px;
-    margin-top: -10px;
-    color: var(--ion-color-danger);
+/* === Select: placeholder y texto seleccionado === */
+ion-select {
+  --placeholder-color: #999;
+  --color: #222;
+  --icon-color: #888;
+}
+
+/* === Opciones desplegables (popover) === */
+ion-popover {
+  --ion-popover-background: #ffffff;
+  --ion-popover-color: #222222;
+}
+
+/* === Notas de error y advertencia === */
+ion-note[color="danger"], ion-note[color="warning"] {
+  font-size: 13px;
+  margin-left: 8px;
+  font-style: italic;
+}
+
+ion-note[color="danger"] {
+  color: #d9534f;  /* rojo suave */
+}
+
+ion-note[color="warning"] {
+  color: #f0ad4e;  /* naranja */
+}
+
+/* === Botón principal y alternativo === */
+ion-button[type="submit"] {
+  --background: #007bff;
+  --color: #fff;
+  border-radius: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,123,255,0.4);
+  margin-top: 16px;
+}
+
+ion-button[fill="clear"] {
+  color: #007bff;
+  font-size: 14px;
+}
+
+/* === Encabezados, iconos y transiciones === */
+ion-header {
+  ion-toolbar {
+    --background: linear-gradient(to left, #e1084d, #808093);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    ion-title {
+      font-size: 24px;
+      font-weight: 600;
+      text-shadow: 0 0 4px #ffffff;
+    }
+
+    ion-icon {
+      font-size: 24px;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+    }
   }
+}
 
-  ion-button {
-    margin-top: 12px;
-    font-weight: 600;
+ion-header ion-title {
+  color: #333333;
+}
+
+.fade-in {
+  animation: aparecer 0.4s ease-in;
+}
+.fade-out {
+  opacity: 0;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Animación de entrada */
+@keyframes fadeInForm {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-
-  ion-button[fill="clear"] {
-    margin-top: 4px;
-    --color: var(--ion-color-medium);
-    text-decoration: underline;
-    font-size: 15px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

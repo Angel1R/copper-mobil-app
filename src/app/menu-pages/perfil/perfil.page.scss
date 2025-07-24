@@ -24,7 +24,7 @@ ion-header {
 
 /* Card de perfil */
 ion-card {
-  background: linear-gradient(to right, #2c2c3c, #3a3a4c);
+  background: linear-gradient(to right, #2c2c3c, #777784);
   border-radius: 16px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
   color: #f5f5f5;
@@ -50,8 +50,37 @@ ion-card-content p {
   color: #ddd;
 }
 
-ion-card-content strong {
-  color: #20c997;
+/* Sección de correo opcional dentro del perfil */
+ion-card-content > .ion-margin-top {
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-top: 16px;
+}
+
+/* Estilo al ion-item (input) */
+ion-card-content > .ion-margin-top ion-item {
+  --background: transparent;
+  --placeholder-color: #ccc;
+  --color: #eee;
+  --padding-start: 0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+/* Texto del input */
+ion-card-content > .ion-margin-top ion-input {
+  color: #eee;
+}
+
+/* Botón “Guardar correo” */
+ion-card-content > .ion-margin-top ion-button[color="primary"] {
+  --background: #ffd86b;
+  --color: #2a2a3b;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(255, 216, 107, 0.4);
+  margin-top: 8px;
 }
 
 /* Botón cerrar sesión */

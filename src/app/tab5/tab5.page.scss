@@ -1,42 +1,87 @@
-ion-label.respuesta p {
-  font-size: 14px;
-  color: var(--ion-color-medium);
-  margin: 0;
-  padding-left: 16px;
+ion-content {
+  --background: linear-gradient(to bottom, #1e1e2e, #2a2a3b);
+  color: #eee;
+  padding-top: 12px;
 }
 
-.respuesta-expandida {
-  max-height: 300px;
-  opacity: 1;
-  transition: max-height 300ms ease, opacity 300ms ease;
-  overflow: hidden;
+/* Lista de FAQs */
+ion-list {
+  margin: 0 12px;
+  background-color: transparent;
 }
+
+ion-item {
+  --background: #2e2e40;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+
+  ion-label h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+}
+
+/* Animación para respuesta */
+.respuesta-expandida {
+  max-height: 400px;
+  opacity: 1;
+  transition: max-height 0.4s ease, opacity 0.4s ease;
+}
+
 .respuesta-colapsada {
   max-height: 0;
-  opacity: 0;
-  transition: max-height 300ms ease, opacity 300ms ease;
   overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
 }
 
-ion-button.enviar-animado {
-  transition: transform 0.2s ease-in-out;
+.respuesta p {
+  font-size: 14px;
+  color: #ccc;
+  padding: 8px 12px;
 }
 
-ion-button.enviar-animado:active {
-  transform: scale(0.97);
+/* Card para enviar ticket */
+ion-card {
+  background: linear-gradient(to right, #2c2c3c, #3a3a4c);
+  border-radius: 14px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.4);
+  margin: 16px;
+  color: #f0f0f0;
 }
 
-.toast-fade-in {
-  animation: fadeInUp 0.4s ease-out;
+ion-card-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #6bffd5;
 }
 
-@keyframes fadeInUp {
-  0% {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+ion-textarea {
+  margin-top: 12px;
+  background-color: #2b2b3c;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 14px;
+  --placeholder-color: #aaa;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Botón de enviar */
+.enviar-animado {
+  margin-top: 12px;
+  --background: #20c997;
+  --color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(32, 201, 151, 0.4);
+  animation: pulseEnviar 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseEnviar {
+  0% { box-shadow: 0 0 10px rgba(32, 201, 151, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(32, 201, 151, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(32, 201, 151, 0.4); }
 }

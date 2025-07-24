@@ -1,34 +1,135 @@
-ion-item {
-  margin-bottom: 12px;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+ion-content {
+  --background: linear-gradient(to bottom, #1e1e2e, #2a2a3b 80%);
+  color: #eee;
+  position: relative;
 }
 
-ion-label h2 {
-  font-size: 18px;
+
+ion-segment {
+  margin: 12px;
+  --indicator-color: #3c7eff;
+  --background: #f0f2f8;
+
+  ion-label {
+    font-weight: bold;
+    color: #333;
+  }
+
+  ion-segment-button {
+    border-radius: 8px;
+    margin: 0 4px;
+    --color-checked: #3c7eff;
+  }
+}
+
+ion-list {
+  background-color: transparent;
+}
+
+.plan-item {
+  background: linear-gradient(135deg, #2e2e40, #3c3c50);
+  border-radius: 12px;
+  margin: 8px 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.015);
+  }
+
+  ion-label h2 {
+    color: #0475b1;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  ion-label p {
+    font-size: 13px;
+    color: #000000;
+  }
+
+  li {
+    font-size: 12px;
+    color: #a0a0a0;
+  }
+
+  ion-icon {
+    font-size: 22px;
+    color: #00c8cb;
+    margin-right: 6px;
+  }
+}
+
+.chip-card {
+  background: linear-gradient(to bottom right, #283046, #3e4b66);
+  border-radius: 16px;
+  box-shadow: 0 0 12px rgba(0, 146, 255, 0.2);
+  padding-bottom: 16px;
+  color: #e3e3e3;
+  animation: fadeInChip 0.4s ease-in;
+}
+
+ion-card-title {
+  color: #ffffff;
+}
+
+.chip-badge {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid #20c997;
+  padding: 6px 12px;
+  margin-bottom: 14px;
   font-weight: bold;
-}
-
-ion-label p {
-  font-size: 14px;
-  color: #666;
-}
-
-.input-error {
-  border: 1px solid var(--ion-color-danger);
+  color: #aeefff;
   border-radius: 8px;
+  display: flex;
+  align-items: center;
+
+  .badge-icon {
+    font-size: 20px;
+    margin-right: 6px;
+    color: #20c997;
+  }
 }
 
-.input-alert {
-  padding-left: 12px;
-  font-size: 13px;
-}
-
-.tipo-selector ion-radio {
-  --color: var(--ion-color-primary);
+@keyframes fadeInChip {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .tipo-selector {
-  --inner-border-radius: 8px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  background-color: #ffffff;
+  border: 1px solid #c9dfff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.input-error {
+  border-left: 3px solid #ff4d4d;
+  background-color: #ffecec;
+}
+
+.input-alert {
+  margin-left: 8px;
+  font-size: 13px;
+  font-style: italic;
+}
+
+ion-button[color="primary"] {
+  margin-top: 16px;
+  --background: #3c7eff;
+  --color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 0 8px rgba(60, 126, 255, 0.4);
+}
+
+ion-spinner[name="dots"] {
+  color: #fff;
+}
+
+.plan-icon {
+  font-size: 24px;
+  color: #3c7eff;
+  margin-right: 8px;
 }

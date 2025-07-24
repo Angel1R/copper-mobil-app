@@ -26,7 +26,24 @@ const routes: Routes = [
   {
     path: 'configuracion',
     loadChildren: () => import('./menu-pages/configuracion/configuracion.module').then( m => m.ConfiguracionPageModule)
+  },
+  {
+    path: 'historial-tickets',
+    loadChildren: () => import('./menu-pages/historial-tickets/historial-tickets.module').then( m => m.HistorialTicketsPageModule)
+  },  {
+    path: 'historial-chips',
+    loadChildren: () => import('./menu-pages/historial-chips/historial-chips.module').then( m => m.HistorialChipsPageModule)
+  },
+  {
+    path: 'perfil',
+    loadChildren: () => import('./menu-pages/perfil/perfil.module').then( m => m.PerfilPageModule)
+  },
+  {
+    path: 'configuracion',
+    loadChildren: () => import('./menu-pages/configuracion/configuracion.module').then( m => m.ConfiguracionPageModule)
   }
+
+
 ];
 
 @NgModule({

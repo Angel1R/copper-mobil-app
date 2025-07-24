@@ -7,7 +7,11 @@
 
   <!-- Refresher -->
   <ion-refresher slot="fixed" (ionRefresh)="actualizar($event)">
-    <ion-refresher-content pullingIcon="chevron-down" refreshingSpinner="circles" pullingText="Desliza para actualizar" refreshingText="Actualizando...">
+    <ion-refresher-content
+      pullingIcon="chevron-down"
+      refreshingSpinner="circles"
+      pullingText="Desliza para actualizar"
+      refreshingText="Actualizando...">
     </ion-refresher-content>
   </ion-refresher>
 
@@ -46,18 +50,25 @@
     </ion-card-header>
     <ion-card-content>
       <ion-list>
-        <ion-item *ngFor="let t of ticketsFiltrados">
+        <ion-item
+          *ngFor="let t of ticketsFiltrados"
+          class="ticket-item {{ t.status }}"
+          lines="none"
+        >
           <ion-label>
             <h4>{{ t.issue }}</h4>
-            <p style="font-size: 13px; color: gray;">
-              Estado:
-              <strong [style.color]="t.status === 'resuelto' ? 'green' : 'orange'">
-                {{ t.status === 'resuelto' ? '✅ Resuelto' : '⏳ Pendiente' }}
-              </strong>
-              |
+            <p>
               {{ t.createdAt | date:'medium' }}
             </p>
           </ion-label>
+          <div
+            class="ticket-badge {{ t.status }}"
+            [title]="t.status === 'resuelto'
+              ? 'Este ticket ya fue resuelto por soporte'
+              : 'Este ticket aún está pendiente'"
+          >
+            {{ t.status === 'resuelto' ? '🟢 RESUELTO' : '🟠 PENDIENTE' }}
+          </div>
         </ion-item>
       </ion-list>
     </ion-card-content>

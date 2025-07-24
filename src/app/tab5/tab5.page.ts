@@ -34,7 +34,8 @@ export class Tab5Page implements OnInit {
     try {
       const response = await Http.get({
         url: `${environment.apiUrl}/faq`,
-        headers: {}
+        headers: {},
+        params: {}
       });
       this.faq = (response.data || []).map((f: any) => ({ ...f, abierto: false }));
     } catch (error) {
@@ -65,7 +66,8 @@ export class Tab5Page implements OnInit {
       const res = await Http.post({
         url: `${environment.apiUrl}/soporte`,
         headers: { 'Content-Type': 'application/json' },
-        data: ticket
+        data: ticket,
+        params: {}
       });
 
       const toast = await this.toastCtrl.create({

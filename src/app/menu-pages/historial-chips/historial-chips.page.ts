@@ -34,25 +34,19 @@ export class HistorialChipsPage implements OnInit {
   }
 
   get chipsFiltrados(): any[] {
-    let filtrados = [...this.chips];
+  let filtrados = [...this.chips];
 
-    if (this.filtroEstado !== 'todos') {
-      filtrados = filtrados.filter(c => c.status === this.filtroEstado);
-    }
-
-    if (this.busqueda.trim().length > 0) {
-      const kw = this.busqueda.trim().toLowerCase();
-      filtrados = filtrados.filter(c => c.nombre.toLowerCase().includes(kw) || c.direccion.toLowerCase().includes(kw));
-    }
-
-    filtrados.sort((a, b) => {
-      const fa = new Date(a.createdAt).getTime();
-      const fb = new Date(b.createdAt).getTime();
-      return this.ordenChips === 'recientes' ? fb - fa : fa - fb;
-    });
-
-    return filtrados;
+  if (this.busqueda.trim().length > 0) {
+    const kw = this.busqueda.trim().toLowerCase();
+    filtrados = filtrados.filter(c =>
+      c.nombre.toLowerCase().includes(kw) ||
+      c.direccion.toLowerCase().includes(kw)
+    );
   }
+
+  return filtrados;
+}
+
 
   async obtenerChips() {
     const userId = localStorage.getItem('user_id');

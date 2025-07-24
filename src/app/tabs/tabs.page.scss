@@ -1,32 +1,105 @@
-
-.logo-container {
-  text-align: center;
-  background-color: white;
+ion-split-pane {
+  --background: linear-gradient(to right, #1e1e2e, #2a2a3b);
 }
 
-.logo {
-  width: 120px;
-  height: auto;
+/* MENÚ LATERAL */
+ion-menu {
+  animation: slideInMenu 0.35s ease-out forwards;
+  transform: translateX(100%);
+  opacity: 0;
+  --background: #2a2a3b;
+  color: #f0f0f0;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+
+  ion-header {
+    background: #2e2e40;
+
+    ion-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffd86b;
+      padding: 12px;
+    }
+  }
+
+  ion-list {
+    padding: 0;
+
+    ion-item {
+      --background: transparent;
+      color: #e30707;
+      font-weight: 600;
+      font-size: 15px;
+      border-radius: 8px;
+      margin: 6px 8px;
+      transition: background 0.3s ease;
+    }
+
+    ion-item:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    ion-item:active {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+  }
 }
 
-.logo-container img {
-  width: 120px;
-  height: auto;
-  padding: 7px;
+/* TAB HEADER */
+ion-header {
+  ion-toolbar {
+    --background: linear-gradient(to right, #1f1f2d, #8b8989);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    padding-left: 12px;
+    padding-right: 12px;
+
+    img {
+      max-height: 28px;
+      filter: drop-shadow(0 0 4px rgb(145, 201, 247)) brightness(1.3) contrast(1.1);
+      border-radius: 6px;
+      transition: transform 0.3s ease;
+    }
+
+    ion-button {
+      --color: #ffd86b;
+      font-weight: bold;
+    }
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
 }
 
-ion-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  height: auto;
-  background-color: transparent;
+/* TAB BAR INFERIOR */
+ion-tab-bar {
+  --background: #2b2b3c;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.3);
 }
 
-ion-icon {
-  font-size: auto;
-  background-color: transparent;
+ion-tab-button {
+  --color: #aaa;
+  --color-selected: #20c997;
+  transition: all 0.3s ease;
+
+  ion-icon {
+    font-size: 22px;
+  }
+
+  ion-label {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    --color: #ffd86b;
+  }
 }
 
-
+@keyframes slideInMenu {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

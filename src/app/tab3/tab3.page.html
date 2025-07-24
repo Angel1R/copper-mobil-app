@@ -1,6 +1,16 @@
-<ion-content [fullscreen]="true">
-  <div class="welcome-container">
-    <h1>¡Bienvenido a Copper Mobile!</h1>
-    <p>Tu plataforma confiable para gestionar tus servicios y disfrutar de grandes beneficios.</p>
+<ion-content class="ion-padding fade-in">
+  <div class="bienvenida-container">
+    <h1>👋 ¡Hola, {{ nombre }}!</h1>
+    <p>Tu cuenta está lista para comenzar. Explora las secciones, solicita tu chip o consulta tu perfil.</p>
+
+    <ion-button expand="block" routerLink="/tabs/tab2">
+      <ion-icon name="bag-handle-outline" slot="start"></ion-icon>
+      Ir al e-commerce
+    </ion-button>
+
+    <ion-button expand="block" fill="outline" routerLink="/perfil">
+      <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+      Ver mi perfil
+    </ion-button>
   </div>
 </ion-content>
