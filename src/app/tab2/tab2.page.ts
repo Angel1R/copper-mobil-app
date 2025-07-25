@@ -122,7 +122,9 @@ export class Tab2Page implements OnInit, OnDestroy {
     let email: string | null = null;
     try {
       const perfil = await Http.get({
-        url: `${environment.apiUrl}/auth/profile/${userId}`
+        url: `${environment.apiUrl}/auth/profile/${userId}`,
+        headers: {},
+        params: {}
       });
       email = perfil.data.email;
 
@@ -150,9 +152,14 @@ export class Tab2Page implements OnInit, OnDestroy {
 
     // ── 2) Si llegamos aquí, SIEMPRE hay un email válido ──────
     const payload = {
-      title: plan.name,
-      price: plan.price,
-      user_id: userId
+      user_id: userId,
+      plan: {
+        name:          plan.name,
+        price:         plan.price,
+        data_limit:    plan.data_limit,
+        validity_days: plan.validity_days,
+        benefits:      plan.benefits
+      }
     };
 
     try {
