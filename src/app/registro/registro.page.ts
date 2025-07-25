@@ -83,7 +83,8 @@ export class RegistroPage implements OnInit, OnDestroy {
     try {
       const res = await Http.get({
         url: `${environment.apiUrl}/users/existe?phone=${phone}`,
-        headers: {}
+        headers: {},
+        params:{}
       });
       this.numeroYaRegistrado = res.data?.registrado;
     } catch {
@@ -129,7 +130,8 @@ export class RegistroPage implements OnInit, OnDestroy {
     const res = await Http.post({
       url: `${environment.apiUrl}/auth/send-otp`,
       headers: { 'Content-Type': 'application/json' },
-      data: { phone }
+      data: { phone },
+      params:{}
     });
 
     // Ahora inspeccionamos res.status
@@ -185,7 +187,8 @@ export class RegistroPage implements OnInit, OnDestroy {
       const res = await Http.post({
         url: `${environment.apiUrl}/auth/validate-otp`,
         headers: { 'Content-Type': 'application/json' },
-        data: { phone, code: otp }
+        data: { phone, code: otp },
+        params:{}
       });
 
       if (res.status !== 200) {
@@ -204,7 +207,8 @@ export class RegistroPage implements OnInit, OnDestroy {
           balance:      0.0,
           plan:         'sin_plan',
           transactions: []
-        }
+        },
+        params:{}
       });
 
       if (crearUsuario.status !== 200 || !crearUsuario.data.user_id) {
@@ -230,7 +234,8 @@ export class RegistroPage implements OnInit, OnDestroy {
       await Http.post({
         url: `${environment.apiUrl}/auth/send-otp`,
         headers: { 'Content-Type': 'application/json' },
-        data: { phone }
+        data: { phone },
+        params:{}
       });
 
       this.toast.mostrarToast('📲 Nuevo código enviado');

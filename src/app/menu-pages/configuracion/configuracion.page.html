@@ -1,13 +1,47 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>configuracion</ion-title>
-  </ion-toolbar>
-</ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">configuracion</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding configuracion-content" [fullscreen]="true">
+  <ion-button fill="clear" (click)="volverAHome()" class="volver-btn">
+    <ion-icon name="arrow-back-outline"></ion-icon>
+    Volver
+  </ion-button>
+  <div class="config-wrapper" *ngIf="!cargando">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Editar perfil</ion-card-title>
+        <ion-card-subtitle>Actualiza tus datos</ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <!-- Nombre -->
+        <ion-item>
+          <ion-label position="stacked">Nombre</ion-label>
+          <ion-input
+            [(ngModel)]="newName"
+            [value]="nombre"
+            placeholder="Tu nombre completo">
+          </ion-input>
+        </ion-item>
+
+        <!-- Email -->
+        <ion-item>
+          <ion-label position="stacked">Correo</ion-label>
+          <ion-input
+            [(ngModel)]="newEmail"
+            [value]="email"
+            type="email"
+            placeholder="correo@ejemplo.com">
+          </ion-input>
+        </ion-item>
+
+        <ion-button
+          expand="block"
+          color="primary"
+          class="guardar-btn"
+          (click)="guardarCambios()"
+          [disabled]="!validateInputs()">
+          Guardar cambios
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>

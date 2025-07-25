@@ -33,7 +33,9 @@ export class PerfilPage {
 
     try {
       const res = await Http.get({
-        url: `${environment.apiUrl}/auth/profile/${this.userId}`
+        url: `${environment.apiUrl}/auth/profile/${this.userId}`,
+        headers:{},
+        params:{}
       });
       const data: any = res.data;
 
@@ -90,7 +92,8 @@ export class PerfilPage {
         data: {
           user_id: this.userId,
           email:   this.newEmail
-        }
+        },
+        params:{}
       });
 
       this.toast.mostrarToast('Correo actualizado', 'success');
