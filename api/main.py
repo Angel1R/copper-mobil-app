@@ -20,7 +20,7 @@ mp_sdk = mercadopago.SDK("APP_USR-6750690243481661-070418-e929368f48abae356c72c4
 from models import (
     UserModel, PlanModel, UserInput, UserResponse, TransactionModel, 
     DataUsageModel, SupportTicketModel, TicketDB, TicketInput, 
-    FAQModel, ChipRequest, EmailUpdate, PaymentRequest
+    FAQModel, ChipRequest, EmailUpdate, NameUpdate, PaymentRequest
 )
 from database import (
     users_collection, plans_collection, support_tickets_collection,
@@ -213,6 +213,19 @@ def update_email(data: EmailUpdate = Body(...)):
         { "$set": { "email": data.email } }
     )
     return { "message": "Email actualizado" }
+
+@app.patch("/api/auth/update-name")
+def update_name(data: NameUpdate = Body(...)):
+    user = users_collection.find_one({ "_id": ObjectId(data.user_id) })
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    users_collection.update_one(
+        { "_id": ObjectId(data.user_id) },
+        { "$set": { "name": data.name } }
+    )
+
+    return { "message": "Nombre actualizado" }
 
 VALID_LADAS = ["+52", "+1", "+57"]  # México, USA, Colombia...
 

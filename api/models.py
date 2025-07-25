@@ -29,6 +29,10 @@ class EmailUpdate(BaseModel):
     user_id: str
     email:   EmailStr
 
+class NameUpdate(BaseModel):
+    user_id: str
+    name: str = Field(..., min_length=2, max_length=100, example="Carlos Mejía")
+
 # Modelo para Planes
 class PlanModel(BaseModel):
     name: str
