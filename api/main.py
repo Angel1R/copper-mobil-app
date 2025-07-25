@@ -373,73 +373,25 @@ def registrar_recarga(datos: dict = Body(...)):
 
 
 # MERCADOPAGO
-''' @app.post("/api/pago/mercadopago")
-def crear_preferencia_pago(plan: dict = Body(...)):
-    try:
-        # 1. Obtener entorno y token
-        env = os.getenv("MP_ENV", "sandbox")
-        token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
-
-        # 2. Validar token
-        if not isinstance(token, str) or not token.strip():
-            raise ValueError("Access token no definido o no válido")
-
-        # 3. Obtener email dinámico
-        if env == "sandbox":
-            payer_email = "test_user_123456@testuser.com"
-        else:
-            user_id = plan.get("user_id")
-            if not user_id:
-                raise HTTPException(status_code=400, detail="Falta user_id")
-            
-            usuario = users_collection.find_one({"_id": ObjectId(user_id)})
-            if not usuario or "email" not in usuario:
-                raise HTTPException(status_code=404, detail="Usuario no encontrado o sin email")
-
-            payer_email = usuario["email"]
-
-        print("📧 Email asignado:", payer_email)
-
-        # 4. Inicializar SDK y armar preferencia
-        sdk = mercadopago.SDK(token)
-
-        preference_data = {
-            "items": [{
-                "title": plan.get("title", "Plan personalizado"),
-                "quantity": 1,
-                "unit_price": float(plan.get("price", 100.0))
-            }],
-            "payer": {
-                "email": payer_email
-            },
-            "back_urls": {
-                "success": "coppermobil://pago-exitoso",
-                "failure": "coppermobil://pago-fallido",
-                "pending": "coppermobil://pago-pendiente"
-            },
-            "auto_return": "approved"
-        }
-
-        preference_response = sdk.preference().create(preference_data)
-        preference = preference_response.get("response", {})
-
-        return {
-            "init_point": preference.get("init_point"),
-            "status": "ok"
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al crear preferencia de pago: {e}") '''
-        
 @router.post("/mercadopago")
 async def crear_preferencia_pago(pago: PaymentRequest):
-    # 0) Busca al usuario y su email
+    # 🔁 Detecta entorno (sandbox o producción)
+    env = os.getenv("MP_ENV", "sandbox").lower()
+    token = os.getenv("MP_ACCESS_TOKEN_PROD") if env == "production" else os.getenv("MP_ACCESS_TOKEN_SANDBOX")
+    sdk = mercadopago.SDK(token)
+
+    # 🔍 Busca al usuario
     usuario = users_collection.find_one({"_id": ObjectId(pago.user_id)})
     if not usuario or "email" not in usuario:
         raise HTTPException(404, "Usuario no encontrado o sin email")
     email = usuario["email"]
 
-    # 1) Construir payload YA con email
+    # 🧪 En sandbox, sustituye el email real por uno de prueba
+    if env == "sandbox":
+        # Usa otro correo de test para evitar conflicto con la cuenta MP
+        email = "test_user_918263@testuser.com"  # Puedes usar los que te da MP o crear uno nuevo
+
+    # 🛒 Armar preferencia
     data = {
         "items": [{
             "title":       pago.plan.name,
@@ -447,48 +399,30 @@ async def crear_preferencia_pago(pago: PaymentRequest):
             "unit_price":  pago.plan.price,
             "description": f"{pago.plan.data_limit}, beneficios: {', '.join(pago.plan.benefits)}"
         }],
-
         "payer": {
             "email": email
         },
-
         "back_urls": {
             "success": "https://coppermobile.com/exito",
             "failure": "https://coppermobile.com/fracaso",
             "pending": "https://coppermobile.com/pendiente"
         },
-
-        "external_reference": pago.user_id
+        "external_reference": pago.user_id,
+        "auto_return": "approved"
     }
-    logging.info("▶️ Payload a MercadoPago: %s", data)
+
+    logging.info("▶️ Payload MP: %s", data)
 
     try:
-        # 2) Llamada al SDK
-        resultado = mp_sdk.preference().create(data)
-        resp      = resultado.get("response", {})
-
-        logging.info("🔍 Claves en MP response: %s", list(resp.keys()))
-        logging.info("📦 Contenido completo de response: %s", resp)
-
-        # 3) Extrae init_point (o sandbox_init_point)
+        resultado = sdk.preference().create(data)
+        resp = resultado.get("response", {})
         init_url = resp.get("init_point") or resp.get("sandbox_init_point")
         if not init_url:
-            detail = {
-                "message":        "init_point no encontrado en la respuesta de MercadoPago",
-                "available_keys": list(resp.keys()),
-                "full_response":  resp
-            }
-            logging.error("❌ %s", detail)
-            raise HTTPException(500, detail=detail)
-
-        # 4) Retornar la URL de pago
+            raise HTTPException(500, detail="init_point no encontrado en la respuesta")
         return {"init_point": init_url}
-
-    except HTTPException:
-        raise
     except Exception as e:
         logging.error("❌ Error creando preferencia MP", exc_info=True)
-        raise HTTPException(500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
     
 ''' @app.post("/api/pago/mercadopago")
 def crear_preferencia_pago(req: PaymentRequest):
