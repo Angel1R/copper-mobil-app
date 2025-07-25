@@ -21,15 +21,28 @@
   </ion-card>
 
   <form [formGroup]="form" (ngSubmit)="iniciarSesion()">
+
+    <!-- 👇 Nuevo select de lada -->
+    <ion-item>
+      <ion-label position="floating">Lada</ion-label>
+      <ion-select formControlName="lada" interface="popover">
+        <ion-select-option *ngFor="let l of ladas" [value]="l.code">
+          {{ l.label }} (+{{ l.code }})
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- 👇 Input de teléfono puro -->
     <ion-item>
       <ion-label position="floating">Teléfono</ion-label>
       <ion-input type="tel" formControlName="phone"></ion-input>
     </ion-item>
     <ion-note color="danger"
       *ngIf="form.get('phone')?.touched && form.get('phone')?.invalid">
-      Ingresa un teléfono válido
+      Ingresa un teléfono válido con {{ getMinDigitsSeleccionados() }} dígitos
     </ion-note>
 
+    <!-- 👇 Contraseña -->
     <ion-item>
       <ion-label position="floating">Contraseña</ion-label>
       <ion-input type="password" formControlName="password"></ion-input>
@@ -39,11 +52,12 @@
       La contraseña debe tener al menos 6 caracteres
     </ion-note>
 
-    <!-- Mensaje genérico de error -->
+    <!-- 👇 Mensaje de error -->
     <ion-note color="danger" *ngIf="loginError" class="ion-margin-top">
       {{ loginError }}
     </ion-note>
 
+    <!-- 👇 Botones -->
     <ion-button type="submit" expand="block"
       [disabled]="!form.valid || apiCaida">
       Entrar

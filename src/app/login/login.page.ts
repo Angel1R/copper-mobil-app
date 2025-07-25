@@ -5,6 +5,7 @@ import { NavController } from '@ionic/angular';
 import { environment } from 'src/environments/environment';
 import { ApiStatusService } from '../services/api-status.service';
 import { ToastService } from '../services/toast.service';
+import { LADAS } from '../services/contstants';
 
 @Component({
   selector: 'app-login',
@@ -16,6 +17,7 @@ export class LoginPage {
   form: FormGroup;
   apiCaida = false;
   loginError = '';
+  ladas = LADAS;
 
   constructor(
     private fb: FormBuilder,
@@ -23,17 +25,46 @@ export class LoginPage {
     private apiStatus: ApiStatusService,
     private toast: ToastService
   ) {
+    // Inicializa el formulario con lada seleccionada por defecto
     this.form = this.fb.group({
-      phone: ['', [Validators.required, Validators.minLength(12)]],
+      lada: [this.ladas[0].code], // por defecto México 🇲🇽
+      phone: ['', Validators.required],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
+    // Suscripción al estado del servidor
     this.apiStatus.apiEstaDisponible.subscribe(
       disponible => this.apiCaida = !disponible
     );
 
-    // Limpia el mensaje de error al modificar campos
+    // Limpia error al modificar
     this.form.valueChanges.subscribe(() => this.loginError = '');
+
+    // Ajusta validadores del teléfono según lada elegida
+    const ladaCtrl = this.form.controls['lada'];
+    const phoneCtrl = this.form.controls['phone'];
+
+    ladaCtrl.valueChanges.subscribe((code: string) => {
+      const cfg = this.ladas.find(l => l.code === code)!;
+      phoneCtrl.setValidators([
+        Validators.required,
+        Validators.minLength(cfg.minDigits),
+        Validators.maxLength(cfg.minDigits)
+      ]);
+      phoneCtrl.updateValueAndValidity();
+    });
+  }
+
+  private normalizarTelefono(phone: string, lada: string): string {
+    const digitos = phone.trim().replace(/\D+/g, '');
+    if (digitos.startsWith(lada)) return digitos;
+    return `${lada}${digitos}`;
+  }
+
+  getMinDigitsSeleccionados(): number {
+    const code = this.form.get('lada')?.value;
+    const ladaObj = this.ladas.find(l => l.code === code);
+    return ladaObj?.minDigits || 0;
   }
 
   async iniciarSesion() {
@@ -49,13 +80,15 @@ export class LoginPage {
       return;
     }
 
-    const { phone, password } = this.form.value;
+    const { lada, phone, password } = this.form.value;
+    const telefonoNormalizado = this.normalizarTelefono(phone, lada);
 
     try {
       const response = await Http.post({
         url: `${environment.apiUrl}/auth/login`,
         headers: { 'Content-Type': 'application/json' },
-        data: { phone, password }
+        data: { phone: telefonoNormalizado, password },
+        params: {}
       });
 
       if (response.status === 200 && response.data?.user_id) {
@@ -67,25 +100,19 @@ export class LoginPage {
         this.toast.mostrarToast(`👋 Bienvenido ${name}`);
         this.navCtrl.navigateRoot('/tabs/tab3');
       } else {
-        // cualquier otro status lo capturamos abajo
         throw { status: response.status, error: response.data };
       }
 
     } catch (err: any) {
       if (err.status === 404) {
-        // cuenta no encontrada
         this.loginError = '❗ Esta cuenta no existe';
         this.toast.mostrarToast(this.loginError, 'warning');
-
       } else if (err.status === 401 || err.error?.detail?.includes('Credenciales inválidas')) {
-        // usuario existe pero password mal
         this.loginError = '🔐 Teléfono o contraseña incorrectos';
         this.toast.mostrarToast(this.loginError, 'warning');
-
       } else if (err.status === 422) {
         this.loginError = '⚠️ Formato de datos inválido';
         this.toast.mostrarToast(this.loginError, 'warning');
-
       } else {
         this.loginError = '❌ No se pudo iniciar sesión';
         this.toast.mostrarToast(this.loginError, 'danger');
