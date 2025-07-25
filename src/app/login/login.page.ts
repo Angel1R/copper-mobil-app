@@ -18,6 +18,7 @@ export class LoginPage {
   apiCaida = false;
   loginError = '';
   ladas = LADAS;
+  mostrarPassword = false;
 
   constructor(
     private fb: FormBuilder,
@@ -53,6 +54,14 @@ export class LoginPage {
       ]);
       phoneCtrl.updateValueAndValidity();
     });
+  }
+
+  get tipoPassword() {
+    return this.mostrarPassword ? 'text' : 'password';
+  }
+
+  alternarPassword() {
+    this.mostrarPassword = !this.mostrarPassword;
   }
 
   private normalizarTelefono(phone: string, lada: string): string {

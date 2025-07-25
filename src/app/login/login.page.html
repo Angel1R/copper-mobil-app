@@ -27,7 +27,7 @@
       <ion-label position="floating">Lada</ion-label>
       <ion-select formControlName="lada" interface="popover">
         <ion-select-option *ngFor="let l of ladas" [value]="l.code">
-          {{ l.label }} (+{{ l.code }})
+          {{ l.label }}
         </ion-select-option>
       </ion-select>
     </ion-item>
@@ -45,7 +45,15 @@
     <!-- 👇 Contraseña -->
     <ion-item>
       <ion-label position="floating">Contraseña</ion-label>
-      <ion-input type="password" formControlName="password"></ion-input>
+      <ion-input [type]="tipoPassword" formControlName="password"></ion-input>
+
+      <!-- Icono para mostrar/ocultar contraseña -->
+      <ion-icon
+        [name]="mostrarPassword ? 'eye-off' : 'eye'"
+        slot="end"
+        style="font-size: 20px; cursor: pointer; align-self: center;"
+        (click)="alternarPassword()">
+      </ion-icon>
     </ion-item>
     <ion-note color="danger"
       *ngIf="form.get('password')?.touched && form.get('password')?.invalid">
