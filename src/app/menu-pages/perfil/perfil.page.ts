@@ -3,6 +3,7 @@ import { NavController } from '@ionic/angular';
 import { Http } from '@capacitor-community/http';
 import { environment } from 'src/environments/environment';
 import { ToastService } from 'src/app/services/toast.service';
+import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-perfil',
@@ -11,19 +12,19 @@ import { ToastService } from 'src/app/services/toast.service';
   standalone: false
 })
 export class PerfilPage {
-  nombre:   string = '';
-  email:    string | null = null;
-  newEmail: string = '';
-  balance:  number = 0;
-  cargando: boolean = true;
-  private userId: string = '';
+  nombre = '';
+  email: string | null = null;
+  newEmail = '';
+  balance = 0;
+  cargando = true;
+  private userId = '';
 
   constructor(
     private navCtrl: NavController,
-    private toast:   ToastService
+    private toast:   ToastService,
+    private userService: UserService
   ) {}
 
-  // Cambiamos el return type a Promise<void>
   async ionViewWillEnter(): Promise<void> {
     this.userId = localStorage.getItem('user_id') || '';
     if (!this.userId) {
@@ -34,25 +35,23 @@ export class PerfilPage {
     try {
       const res = await Http.get({
         url: `${environment.apiUrl}/auth/profile/${this.userId}`,
-        headers:{},
-        params:{}
+        headers: {},
+        params: {}
       });
       const data: any = res.data;
 
       this.nombre = data.name;
       this.email  = data.email;
-
-      // Asegurarte de que balance siempre sea un número
-      const balanceNum = typeof data.balance === 'number'
+      this.balance = typeof data.balance === 'number'
         ? data.balance
         : parseFloat(data.balance) || 0;
 
-      this.balance = balanceNum;
-
-      // Guarda siempre un string válido
-      localStorage.setItem('user_name',   this.nombre);
-      localStorage.setItem('user_email',  this.email  || '');
-      localStorage.setItem('user_balance', balanceNum.toString());
+      // Guardo en UserService y en localStorage
+      this.userService.actualizarDatosParciales({
+        name: data.name,
+        email: data.email,
+        balance: this.balance
+      });
 
     } catch (e) {
       console.error('No pude cargar perfil:', e);
@@ -86,18 +85,16 @@ export class PerfilPage {
     }
 
     try {
+      // Llamada unificada pasando solo el email
       await Http.patch({
-        url: `${environment.apiUrl}/auth/update-email`,
+        url: `${environment.apiUrl}/auth/update-profile`,
         headers: { 'Content-Type': 'application/json' },
-        data: {
-          user_id: this.userId,
-          email:   this.newEmail
-        },
-        params:{}
+        data: { user_id: this.userId, email: this.newEmail },
+        params: {}
       });
 
       this.toast.mostrarToast('Correo actualizado', 'success');
-      localStorage.setItem('user_email', this.newEmail);
+      this.userService.actualizarDatosParciales({ email: this.newEmail });
       this.email = this.newEmail;
       this.newEmail = '';
 

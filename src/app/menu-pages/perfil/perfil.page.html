@@ -1,24 +1,26 @@
-<ion-content class="ion-padding" *ngIf="!cargando">
-
+<ion-content class="ion-padding perfil-content" [fullscreen]="true">
   <ion-button fill="clear" (click)="volverAHome()" class="volver-btn">
     <ion-icon name="arrow-back-outline"></ion-icon>
     Volver
   </ion-button>
 
-  <div class="perfil-container">
+  <div *ngIf="!cargando" class="perfil-container">
     <ion-card>
       <ion-card-header>
         <ion-card-title>{{ nombre }}</ion-card-title>
-        <!-- Solo mostramos el correo si ya existe -->
         <ion-card-subtitle *ngIf="email">{{ email }}</ion-card-subtitle>
       </ion-card-header>
 
       <ion-card-content>
-        <p><strong>Saldo disponible:</strong> ${{ balance | number:'1.2-2' }}</p>
+        <p>
+          <strong>Saldo disponible:</strong>
+          ${{ balance | number:'1.2-2' }}
+        </p>
 
-        <!-- Si no hay email, permitimos ingresarlo aquí -->
+        <!-- Si el usuario aún no tiene correo, lo capturamos -->
         <div *ngIf="!email" class="ion-margin-top">
           <ion-item>
+            <ion-label position="floating">Correo</ion-label>
             <ion-input
               type="email"
               [(ngModel)]="newEmail"
@@ -26,11 +28,10 @@
             </ion-input>
           </ion-item>
           <ion-button
-            class="save-email-btn"
             expand="block"
             color="primary"
             (click)="actualizarEmail()"
-            [disabled]="!newEmail || !validateEmail(newEmail)">
+            [disabled]="!validateEmail(newEmail)">
             Guardar correo
           </ion-button>
         </div>

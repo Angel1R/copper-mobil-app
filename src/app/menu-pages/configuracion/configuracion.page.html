@@ -1,9 +1,9 @@
-
 <ion-content class="ion-padding configuracion-content" [fullscreen]="true">
   <ion-button fill="clear" (click)="volverAHome()" class="volver-btn">
     <ion-icon name="arrow-back-outline"></ion-icon>
     Volver
   </ion-button>
+
   <div class="config-wrapper" *ngIf="!cargando">
     <ion-card>
       <ion-card-header>
@@ -12,7 +12,6 @@
       </ion-card-header>
 
       <ion-card-content>
-        <!-- Nombre -->
         <ion-item>
           <ion-label position="stacked">Nombre</ion-label>
           <ion-input
@@ -22,7 +21,6 @@
           </ion-input>
         </ion-item>
 
-        <!-- Email -->
         <ion-item>
           <ion-label position="stacked">Correo</ion-label>
           <ion-input
