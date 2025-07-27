@@ -25,13 +25,10 @@ class UserResponse(BaseModel):
     balance: float
     plan: str
 
-class EmailUpdate(BaseModel):
-    user_id: str
-    email:   EmailStr
-
-class NameUpdate(BaseModel):
-    user_id: str
-    name: str = Field(..., min_length=2, max_length=100, example="Carlos Mejía")
+class ProfileUpdate(BaseModel):
+    user_id: str = Field(..., example="64cbe170b7e123abc4567890")
+    name:    Optional[str] = Field(None, min_length=2, max_length=100)
+    email:   Optional[EmailStr] = None
 
 # Modelo para Planes
 class PlanModel(BaseModel):

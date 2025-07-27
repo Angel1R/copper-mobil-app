@@ -20,7 +20,7 @@ mp_sdk = mercadopago.SDK("APP_USR-6750690243481661-070418-e929368f48abae356c72c4
 from models import (
     UserModel, PlanModel, UserInput, UserResponse, TransactionModel, 
     DataUsageModel, SupportTicketModel, TicketDB, TicketInput, 
-    FAQModel, ChipRequest, EmailUpdate, NameUpdate, PaymentRequest
+    FAQModel, ChipRequest, ProfileUpdate, PaymentRequest
 )
 from database import (
     users_collection, plans_collection, support_tickets_collection,
@@ -198,34 +198,41 @@ def get_profile(user_id: str):
         plan    = user["plan"]
     )
 
-@app.patch("/api/auth/update-email")
-def update_email(data: EmailUpdate = Body(...)):
-    user = users_collection.find_one({ "_id": ObjectId(data.user_id) })
-    if not user:
-        raise HTTPException(404, "Usuario no encontrado")
-
-    # Opcional: valida que no exista otro usuario con ese email
-    if users_collection.find_one({ "email": data.email, "_id": {"$ne": user["_id"]} }):
-        raise HTTPException(409, "Correo ya está en uso")
-
-    users_collection.update_one(
-        { "_id": ObjectId(data.user_id) },
-        { "$set": { "email": data.email } }
-    )
-    return { "message": "Email actualizado" }
-
-@app.patch("/api/auth/update-name")
-def update_name(data: NameUpdate = Body(...)):
+@app.patch("/api/auth/update-profile")
+def update_profile(data: ProfileUpdate = Body(...)):
+    # 1) Buscamos usuario
     user = users_collection.find_one({ "_id": ObjectId(data.user_id) })
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
+    # 2) Recolectamos cambios
+    update_fields = {}
+    if data.name is not None:
+        update_fields["name"] = data.name
+
+    if data.email is not None:
+        # Validar duplicados
+        exists = users_collection.find_one({
+            "email": data.email,
+            "_id":    {"$ne": user["_id"]}
+        })
+        if exists:
+            raise HTTPException(status_code=409, detail="Correo ya está en uso")
+        update_fields["email"] = data.email
+
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="Nada para actualizar")
+
+    # 3) Aplicamos el $set
     users_collection.update_one(
         { "_id": ObjectId(data.user_id) },
-        { "$set": { "name": data.name } }
+        { "$set": update_fields }
     )
 
-    return { "message": "Nombre actualizado" }
+    return {
+        "message": "Perfil actualizado",
+        "updated": list(update_fields.keys())
+    }
 
 VALID_LADAS = ["+52", "+1", "+57"]  # México, USA, Colombia...
 
@@ -436,53 +443,6 @@ async def crear_preferencia_pago(pago: PaymentRequest):
     except Exception as e:
         logging.error("❌ Error creando preferencia MP", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-    
-''' @app.post("/api/pago/mercadopago")
-def crear_preferencia_pago(req: PaymentRequest):
-    # 1) Token y entorno
-    env   = os.getenv("MP_ENV", "production")
-    
-    if env == "production":
-        token = os.getenv("MP_ACCESS_TOKEN_PROD")
-    else:
-        token = os.getenv("MP_ACCESS_TOKEN_SANDBOX")
-
-    if not token:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Token de MP no configurado para el entorno {env}"
-        )
-
-    # 2) Obtén y valida usuario
-    usuario = users_collection.find_one({"_id": ObjectId(req.user_id)})
-    if not usuario:
-        raise HTTPException(404, "Usuario no encontrado")
-    email = usuario.get("email")
-    if not email:
-        raise HTTPException(400, "Debes registrar tu correo antes de pagar")
-    
-    print("🔑 TOKEN EN USO:", repr(token))
-    print("🌎 Entorno:", env)
-
-    # 3) Arma la preferencia
-    sdk = mercadopago.SDK(token)
-    pref = {
-      "items": [{
-        "title":      req.plan.name,
-        "quantity":   1,
-        "unit_price": req.plan.price
-      }],
-      "payer":  {"email": email},
-      "back_urls": {
-        "success": os.getenv("MP_BACK_SUCCESS"),
-        "failure": os.getenv("MP_BACK_FAILURE"),
-        "pending": os.getenv("MP_BACK_PENDING")
-      },
-      "auto_return": "approved"
-    }
-
-    resp = sdk.preference().create(pref)["response"]
-    return {"init_point": resp["init_point"]} '''
 
 @app.get("/api/pago/validar")
 def validar_pago(request: Request):
