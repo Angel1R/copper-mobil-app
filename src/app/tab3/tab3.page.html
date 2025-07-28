@@ -1,8 +1,9 @@
 <ion-content class="ion-padding fade-in">
   <div class="bienvenida-container">
-    <h1>👋 ¡Hola, {{ nombre }}!</h1>
+    <div class="bienvenida-container" *ngIf="(userService.usuario$ | async) as user; else loading">
+    <h1>👋 ¡Hola, {{ user.name || 'Usuario' }}!</h1>
+    <!-- resto del contenido -->
     <p>Tu cuenta está lista para comenzar. Explora las secciones, solicita tu chip o consulta tu perfil.</p>
-
     <ion-button expand="block" routerLink="/tabs/tab2">
       <ion-icon name="bag-handle-outline" slot="start"></ion-icon>
       Ir al e-commerce
@@ -12,5 +13,11 @@
       <ion-icon name="person-circle-outline" slot="start"></ion-icon>
       Ver mi perfil
     </ion-button>
+  </div>
+
+  <ng-template #loading>
+    <ion-spinner name="crescent"></ion-spinner>
+  </ng-template>
+
   </div>
 </ion-content>

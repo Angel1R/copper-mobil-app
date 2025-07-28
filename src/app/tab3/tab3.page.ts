@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-tab3',
@@ -6,17 +7,6 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./tab3.page.scss'],
   standalone: false
 })
-export class Tab3Page implements OnInit {
-  cargando: boolean = true;
-  nombre: string = 'Usuario'; // Default por si no hay nombre en storage
-
-  constructor() {}
-
-  async ngOnInit() {
-    const userName = localStorage.getItem('user_name');
-    if (userName) {
-      this.nombre = userName;
-    }
-    this.cargando = false;
-  }
+export class Tab3Page {
+  constructor(public userService: UserService) {}
 }
