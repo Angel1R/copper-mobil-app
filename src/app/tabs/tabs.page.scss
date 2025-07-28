@@ -58,6 +58,8 @@ ion-header {
       filter: drop-shadow(0 0 4px rgb(145, 201, 247)) brightness(1.3) contrast(1.1);
       border-radius: 6px;
       transition: transform 0.3s ease;
+      position: center;
+      align-items: center;
     }
 
     ion-button {
