@@ -3,10 +3,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false,
-  apiUrl: 'https://copper-mobil-app.onrender.com/api',
-  pusherKey: '5bdb901f27232e86c93c',
-  pusherCluster: 'us2'
+  production: false,                             // Flag que habilita/deshabilita debugging
+  apiUrl: 'https://copper-mobil-app.onrender.com/api', // URL base del backend
+  pusherKey: '5bdb901f27232e86c93c',             // Clave pública de Pusher
+  pusherCluster: 'us2' 
 };
 
 /*

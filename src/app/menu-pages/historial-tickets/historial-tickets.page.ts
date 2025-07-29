@@ -1,3 +1,4 @@
+// historial-tickets
 import { Component, OnInit } from '@angular/core';
 import { Http } from '@capacitor-community/http';
 import { environment } from 'src/environments/environment';
@@ -10,42 +11,45 @@ import { NavController } from '@ionic/angular';
   standalone: false
 })
 export class HistorialTicketsPage implements OnInit {
-
   tickets: any[] = [];
   filtroEstado: string = 'todos';
-  ordenTicket: string = 'recientes';
-  busqueda: string = '';
+  ordenTicket:  string = 'recientes';
+  busqueda:      string = '';
 
   constructor(private navCtrl: NavController) {}
 
   volverAHome() {
     this.navCtrl.navigateBack('/tabs/tab3');
     setTimeout(() => {
-      const activo = document.activeElement as HTMLElement;
-      activo?.blur();
-    }, 300); // evita conflicto con ion-searchbar
+      (document.activeElement as HTMLElement)?.blur();
+    }, 300);
   }
 
-  async ngOnInit() {
-    await this.obtenerTickets();
+  ngOnInit() {
+    this.obtenerTickets();
   }
 
-  async ionViewWillEnter() {
-    await this.obtenerTickets();
+  ionViewWillEnter() {
+    this.obtenerTickets();
   }
 
   get ticketsFiltrados(): any[] {
     let filtrados = [...this.tickets];
 
+    // Filtrar por estado
     if (this.filtroEstado !== 'todos') {
       filtrados = filtrados.filter(t => t.status === this.filtroEstado);
     }
 
-    if (this.busqueda.trim().length > 0) {
+    // Filtrar por búsqueda en el asunto
+    if (this.busqueda.trim().length) {
       const kw = this.busqueda.trim().toLowerCase();
-      filtrados = filtrados.filter(t => t.issue.toLowerCase().includes(kw));
+      filtrados = filtrados.filter(t =>
+        t.issue.toLowerCase().includes(kw)
+      );
     }
 
+    // Ordenar por fecha (recientes o antiguos)
     filtrados.sort((a, b) => {
       const fa = new Date(a.createdAt).getTime();
       const fb = new Date(b.createdAt).getTime();
