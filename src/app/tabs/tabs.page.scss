@@ -1,5 +1,5 @@
 ion-split-pane {
-  --background: linear-gradient(to right, #1e1e2e, #2a2a3b);
+  --background: linear-gradient(to left, #1e1e2e, #2a2a3b);
 }
 
 /* MENÚ LATERAL */
@@ -7,7 +7,7 @@ ion-menu {
   animation: slideInMenu 0.35s ease-out forwards;
   transform: translateX(100%);
   opacity: 0;
-  --background: #2a2a3b;
+  --background: transparent;
   color: #f0f0f0;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
 
@@ -46,32 +46,34 @@ ion-menu {
 }
 
 /* TAB HEADER */
-ion-header {
-  ion-toolbar {
-    --background: linear-gradient(to right, #1f1f2d, #8b8989);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-    padding-left: 12px;
-    padding-right: 12px;
+ion-tabs{
+  ion-header {
+    ion-toolbar {
+      --background: linear-gradient(to left, #1f1f2d, #8b8989);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      padding-left: 12px;
+      padding-right: 12px;
 
-    img {
-      max-height: 28px;
-      filter: drop-shadow(0 0 4px rgb(145, 201, 247)) brightness(1.3) contrast(1.1);
-      border-radius: 6px;
-      transition: transform 0.3s ease;
-      position: center;
-      align-items: center;
-    }
+      img {
+        max-height: 28px;
+        filter: drop-shadow(0 0 4px rgb(255, 255, 255)) brightness(1.3) contrast(1.1);
+        border-radius: 6px;
+        position: center;
+        align-items: center;
+      }
 
-    ion-button {
-      --color: #ffd86b;
-      font-weight: bold;
-    }
+      ion-button {
+        --color: #ffd86b;
+        font-weight: bold;
+      }
 
-    ion-icon {
-      font-size: 20px;
+      ion-icon {
+        font-size: 20px;
+      }
     }
   }
 }
+
 
 /* TAB BAR INFERIOR */
 ion-tab-bar {
