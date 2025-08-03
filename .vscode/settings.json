@@ -1,4 +1,5 @@
 {
   "typescript.preferences.autoImportFileExcludePatterns": ["@ionic/angular/common", "@ionic/angular/standalone"],
-  "terminal.integrated.fontSize": 20
+  "terminal.integrated.fontSize": 20,
+  "editor.guides.indentation": false
 }
