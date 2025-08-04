@@ -7,12 +7,12 @@ ion-content {
 
 ion-segment {
   margin: 12px;
-  --indicator-color: #3c7eff;
-  --background: #f0f2f8;
+  --indicator-color: #3c7eff !important;
+  --background: #f0f2f8 !important;
 
   ion-label {
     font-weight: bold;
-    color: #333;
+    color: #333 !important;
   }
 
   ion-segment-button {
@@ -27,35 +27,36 @@ ion-list {
 }
 
 .plan-item {
-  background: linear-gradient(135deg, #2e2e40, #3c3c50);
+  --background: #ffffff !important;
   border-radius: 12px;
   margin: 8px 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   transition: transform 0.2s ease;
+  color: #000;
 
   &:hover {
     transform: scale(1.015);
   }
 
   ion-label h2 {
-    color: #0475b1;
+    color: #0475b1 !important;
     font-size: 16px;
     font-weight: bold;
   }
 
   ion-label p {
     font-size: 13px;
-    color: #000000;
+    color: #000000 !important;
   }
 
   li {
     font-size: 12px;
-    color: #a0a0a0;
+    color: #a0a0a0 !important;
   }
 
   ion-icon {
-    font-size: 22px;
-    color: #00c8cb;
+    font-size: 24px;
+    color: #00c8cb !important;
     margin-right: 6px;
   }
 }
