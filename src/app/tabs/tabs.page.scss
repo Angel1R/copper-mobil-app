@@ -2,6 +2,21 @@ ion-split-pane {
   --background: linear-gradient(to left, #1e1e2e, #2a2a3b);
 }
 
+ion-content {
+  --background: none;
+  background: linear-gradient(
+    to bottom,
+    #0d1117,
+    #1f2937,
+    #2a2e3f,
+    #3b3f58,
+    #2a2e3f,
+    #1f2937
+  );
+  background-size: 100% 300%;
+  animation: gradientShift 10s ease-in-out infinite alternate;
+}
+
 /* MENÚ LATERAL */
 ion-menu {
   animation: slideInMenu 0.35s ease-out forwards;
@@ -17,17 +32,19 @@ ion-menu {
     ion-title {
       font-size: 20px;
       font-weight: bold;
+      background: #000000;
       color: #ffd86b;
       padding: 12px;
     }
   }
 
   ion-list {
+    background: transparent;
     padding: 0;
 
     ion-item {
       --background: transparent;
-      color: #e30707;
+      color: #ffffff;
       font-weight: 600;
       font-size: 15px;
       border-radius: 8px;
@@ -106,4 +123,11 @@ ion-tab-button {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* Animación del gradiente */
+@keyframes gradientShift {
+  /* Solo necesitas dos fotogramas */
+  0%   { background-position: top;    }
+  100% { background-position: bottom; }
 }
