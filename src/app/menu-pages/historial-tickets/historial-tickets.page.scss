@@ -6,9 +6,9 @@ ion-content {
 
 ion-searchbar {
   margin: 12px;
-  --background: #ffffff;
+  --background: #ffffff !important;
   --color: #fff;
-  --placeholder-color: #282121;
+  --placeholder-color: #282121 !important;
   border-radius: 10px;
   font-size: 14px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -60,15 +60,19 @@ ion-searchbar {
 }
 
 /* Título y detalles */
+.ticket-item {
+  --background: #ffffff !important;
+}
+
 .ticket-item h4 {
   font-size: 15px;
   font-weight: 600;
-  color: #000000;
+  color: #000000 !important;
 }
 
 .ticket-item p {
   font-size: 12px;
-  color: #848484;
+  color: #848484 !important;
   margin-top: 4px;
 }
 
