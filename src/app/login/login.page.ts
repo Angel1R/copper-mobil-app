@@ -1,12 +1,12 @@
-// login.page.ts
+// src/app/login/login.page.ts
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';               // Formularios reactivos
-import { Http } from '@capacitor-community/http';                                   // Cliente HTTP nativo
-import { NavController } from '@ionic/angular';                                     // Navegación entre páginas
-import { environment } from 'src/environments/environment';                         // URL de la API
-import { ApiStatusService } from '../services/api-status.service';                  // Estado del backend
-import { ToastService } from '../services/toast.service';                           // Notificaciones tipo toast
-import { LADAS } from '../services/contstants';                                     // Listado de prefijos telefónicos
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Http } from '@capacitor-community/http';
+import { NavController } from '@ionic/angular';
+import { ApiStatusService, EstadoApp } from '../services/api-status.service';
+import { ToastService } from '../services/toast.service';
+import { LADAS } from '../services/contstants';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -15,39 +15,43 @@ import { LADAS } from '../services/contstants';                                 
   standalone: false
 })
 export class LoginPage {
-  // Formulario con campos: lada, phone y password
   form: FormGroup;
-  apiCaida = false;            // True si el backend responde offline
-  loginError = '';             // Mensaje de error a mostrar en UI
-  ladas = LADAS;               // Prefijos disponibles
-  mostrarPassword = false;     // Control para alternar visibilidad
+  loginError = '';
+  mostrarPassword = false;
+  EstadoApp = EstadoApp;
+  estadoApp!: EstadoApp;
+  ladas = LADAS;
+
+  // Getter que expone al template si estamos en caída (offline o mantenimiento)
+  get apiCaida(): boolean {
+    return this.estadoApp !== EstadoApp.ApiOk;
+  }
 
   constructor(
     private fb: FormBuilder,
-    private navCtrl: NavController,
     private apiStatus: ApiStatusService,
-    private toast: ToastService
+    private toast: ToastService,
+    private navCtrl: NavController
   ) {
-    // 1) Inicializamos el formulario
+    // 1) Inicializar formulario
     this.form = this.fb.group({
-      lada: [this.ladas[0].code],              // Prefijo por defecto
-      phone: ['', Validators.required],         // Número (sin lada)
-      password: ['', [Validators.required, Validators.minLength(6)]]  // Contraseña mínima de 6 caracteres
+      lada:     [this.ladas[0].code],
+      phone:    ['', Validators.required],
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
-    // 2) Monitor del estado del backend (Pusher + ping automático)
-    this.apiStatus.apiEstaDisponible
-      .subscribe(disponible => this.apiCaida = !disponible);
+    // 2) Suscribirse al estado combinado de red/API
+    this.apiStatus.estadoApp$.subscribe(estado => {
+      this.estadoApp = estado;
+    });
 
-    // 3) Limpiar mensaje de error al modificar campos
-    this.form.valueChanges.subscribe(() => this.loginError = '');
+    // 3) Limpiar loginError al input
+    this.form.valueChanges.subscribe(() => (this.loginError = ''));
 
-    // 4) Validadores dinámicos: ajusta la longitud de phone según la lada
-    const ladaCtrl = this.form.controls['lada'];
-    const phoneCtrl = this.form.controls['phone'];
-
-    ladaCtrl.valueChanges.subscribe((code: string) => {
+    // 4) Validación dinámica de length según LADA
+    this.form.controls['lada'].valueChanges.subscribe(code => {
       const cfg = this.ladas.find(l => l.code === code)!;
+      const phoneCtrl = this.form.controls['phone'];
       phoneCtrl.setValidators([
         Validators.required,
         Validators.minLength(cfg.minDigits),
@@ -57,42 +61,48 @@ export class LoginPage {
     });
   }
 
-  // Getter para alternar el tipo de input: 'password' o 'text'
-  get tipoPassword() {
+  get tipoPassword(): string {
     return this.mostrarPassword ? 'text' : 'password';
   }
 
-  // Método para cambiar la visibilidad de la contraseña
-  alternarPassword() {
+  alternarPassword(): void {
     this.mostrarPassword = !this.mostrarPassword;
   }
 
-  // Normaliza el número: quita no dígitos y antepone la lada si falta
   private normalizarTelefono(phone: string, lada: string): string {
     const digitos = phone.trim().replace(/\D+/g, '');
     return digitos.startsWith(lada) ? digitos : `${lada}${digitos}`;
   }
 
-  // Retorna la longitud mínima seleccionada (para validaciones en template)
   getMinDigitsSeleccionados(): number {
     const code = this.form.get('lada')?.value;
     return this.ladas.find(l => l.code === code)?.minDigits || 0;
   }
 
-  // Método principal: procesa el inicio de sesión
-  async iniciarSesion() {
-    // Reset del monitor automático (ping)
-    this.apiStatus.actualizar(true);
-
-    // 1) Bloquear si backend está offline
-    if (this.apiCaida) {
-      this.toast.mostrarToast('⚠️ Servidor no disponible. Intenta más tarde.', 'warning');
+  async iniciarSesion(): Promise<void> {
+    // 1) Pre–check con el estado desde ApiStatusService
+    if (this.estadoApp === EstadoApp.DispositivoOffline) {
+      this.toast.mostrarToast(
+        '📴 Sin conexión en tu dispositivo. Revisa Wi-Fi o datos.',
+        'warning'
+      );
       return;
     }
 
-    // 2) Validar formulario
+    if (this.estadoApp === EstadoApp.ApiMantenimiento) {
+      this.toast.mostrarToast(
+        '🛠 Servidor en mantenimiento. Intenta más tarde.',
+        'warning'
+      );
+      return;
+    }
+
+    // 2) Validación de formulario
     if (!this.form.valid) {
-      this.toast.mostrarToast('⚠️ Completa todos los campos correctamente', 'warning');
+      this.toast.mostrarToast(
+        '⚠️ Completa todos los campos correctamente',
+        'warning'
+      );
       return;
     }
 
@@ -101,15 +111,14 @@ export class LoginPage {
     const telefono = this.normalizarTelefono(phone, lada);
 
     try {
-      // 4) Llamada al endpoint de login
+      // 4) Llamada al login
       const response = await Http.post({
-        url: `${environment.apiUrl}/auth/login`,
-        headers: { 'Content-Type': 'application/json' },
-        data: { phone: telefono, password },
+        url:    `${environment.apiUrl}/auth/login`,
+        headers:{ 'Content-Type': 'application/json' },
+        data:   { phone: telefono, password },
         params: {}
       });
 
-      // 5) Éxito: guardar datos en localStorage y navegar
       if (response.status === 200 && response.data?.user_id) {
         const { user_id, name, balance } = response.data;
         localStorage.setItem('user_id', user_id);
@@ -122,20 +131,21 @@ export class LoginPage {
       }
 
     } catch (err: any) {
-      // 6) Manejo de errores según status
+      // 5) Manejo de errores HTTP
       if (err.status === 404) {
         this.loginError = '❗ Esta cuenta no existe';
-        this.toast.mostrarToast(this.loginError, 'warning');
       } else if (err.status === 401 || err.error?.detail?.includes('Credenciales inválidas')) {
         this.loginError = '🔐 Teléfono o contraseña incorrectos';
-        this.toast.mostrarToast(this.loginError, 'warning');
       } else if (err.status === 422) {
         this.loginError = '⚠️ Formato de datos inválido';
-        this.toast.mostrarToast(this.loginError, 'warning');
       } else {
         this.loginError = '❌ No se pudo iniciar sesión';
-        this.toast.mostrarToast(this.loginError, 'danger');
       }
+
+      this.toast.mostrarToast(
+        this.loginError,
+        err.status === 422 ? 'warning' : 'danger'
+      );
     }
   }
 }

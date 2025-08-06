@@ -4,14 +4,28 @@
     <ion-buttons slot="end">
       <ion-icon
         [name]="apiCaida ? 'cloud-offline' : 'cloud-done'"
-        [color]="apiCaida ? 'danger' : 'success'">
+        [color]="estadoApp === EstadoApp.DispositivoOffline ? 'medium'
+             : (estadoApp === EstadoApp.ApiMantenimiento ? 'warning' 
+             : 'success')">
       </ion-icon>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-card color="warning" *ngIf="apiCaida">
+
+  <!-- Mensaje cuando el dispositivo está offline -->
+  <ion-card color="medium" *ngIf="estadoApp === EstadoApp.DispositivoOffline" class="card--offline">
+    <ion-card-header>
+      <ion-card-title>Sin conexión</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      No se detecta conexión a Internet. Revisa tu Wi-Fi o datos móviles.
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Mensaje cuando la API está en mantenimiento -->
+  <ion-card color="warning" *ngIf="estadoApp === EstadoApp.ApiMantenimiento" class="card--maintenance">
     <ion-card-header>
       <ion-card-title>Servidor en mantenimiento</ion-card-title>
     </ion-card-header>
@@ -22,7 +36,6 @@
 
   <form [formGroup]="form" (ngSubmit)="iniciarSesion()">
 
-    <!-- 👇 Nuevo select de lada -->
     <ion-item>
       <ion-label position="floating">Lada</ion-label>
       <ion-select formControlName="lada" interface="popover">
@@ -32,7 +45,6 @@
       </ion-select>
     </ion-item>
 
-    <!-- 👇 Input de teléfono puro -->
     <ion-item>
       <ion-label position="floating">Teléfono</ion-label>
       <ion-input type="tel" formControlName="phone"></ion-input>
@@ -42,12 +54,9 @@
       Ingresa un teléfono válido con {{ getMinDigitsSeleccionados() }} dígitos
     </ion-note>
 
-    <!-- 👇 Contraseña -->
     <ion-item>
       <ion-label position="floating">Contraseña</ion-label>
       <ion-input [type]="tipoPassword" formControlName="password"></ion-input>
-
-      <!-- Icono para mostrar/ocultar contraseña -->
       <ion-icon
         [name]="mostrarPassword ? 'eye-off' : 'eye'"
         slot="end"
@@ -60,13 +69,13 @@
       La contraseña debe tener al menos 6 caracteres
     </ion-note>
 
-    <!-- 👇 Mensaje de error -->
     <ion-note color="danger" *ngIf="loginError" class="ion-margin-top">
       {{ loginError }}
     </ion-note>
 
-    <!-- 👇 Botones -->
-    <ion-button type="submit" expand="block"
+    <ion-button
+      type="submit"
+      expand="block"
       [disabled]="!form.valid || apiCaida">
       Entrar
     </ion-button>
@@ -74,4 +83,5 @@
       ¿No tienes cuenta aún?
     </ion-button>
   </form>
+
 </ion-content>

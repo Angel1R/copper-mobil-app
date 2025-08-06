@@ -1,76 +1,102 @@
-// api-status.service
+// src/app/services/api-status.service.ts
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';                       // Emite cambios de estado a quien se suscriba
-import { Http } from '@capacitor-community/http';             // Cliente HTTP nativo para el fallback ping
-import { environment } from 'src/environments/environment';   // Clave de Pusher y URL de la API
-import Pusher from 'pusher-js';                               // Biblioteca Pusher para eventos en tiempo real
+import { BehaviorSubject } from 'rxjs';
+import { Http } from '@capacitor-community/http';
+import { Network } from '@capacitor/network';
+import { environment } from 'src/environments/environment';
+import Pusher from 'pusher-js';
+
+// 1. Definimos el enum en lugar de union de strings
+export enum EstadoApp {
+  DispositivoOffline = 'dispositivo_offline',
+  ApiOk            = 'api_ok',
+  ApiMantenimiento = 'api_mantenimiento'
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiStatusService {
-  // Sujeto que guarda el estado actual del backend (online/offline)
-  private estadoBackend$ = new BehaviorSubject<boolean>(true);
+  private estadoBackend$    = new BehaviorSubject<boolean>(true);
+  private estadoDispositivo$= new BehaviorSubject<boolean>(true);
 
-  // Marca de tiempo de la última actualización (evento o ping)
+  private estadoAppSubject  = new BehaviorSubject<EstadoApp>(EstadoApp.ApiOk);
+  readonly estadoApp$       = this.estadoAppSubject.asObservable();
+
+  private apiDisponibleSubject = new BehaviorSubject<boolean>(true);
+  readonly apiEstaDisponible   = this.apiDisponibleSubject.asObservable();
+
   private ultimaActualizacion = Date.now();
 
   constructor() {
-    // Inicia escucha de eventos en tiempo real vía Pusher
+    this.iniciarMonitorRed();
     this.iniciarMonitorPusher();
-    // Inicia verificación REST cada cierto tiempo si no hay evento reciente
     this.iniciarMonitorAutomatico();
+    this.clasificarEstadoApp();
   }
 
-  // Exponer un observable para que otros componentes puedan reaccionar
-  get apiEstaDisponible() {
-    return this.estadoBackend$.asObservable();
-  }
-
-  /**
-   * Actualiza el estado del backend y reinicia el timestamp de respaldo
-   * @param valor true = online, false = offline
-   */
+  // Método público para “resetear” desde el login
   actualizar(valor: boolean) {
+    this.actualizarEstadoBackend(valor);
+  }
+
+  private clasificarEstadoApp() {
+    const backend    = this.estadoBackend$.getValue();
+    const dispositivo= this.estadoDispositivo$.getValue();
+
+    let nuevoEstado: EstadoApp;
+    if (!dispositivo) {
+      nuevoEstado = EstadoApp.DispositivoOffline;
+    } else if (backend) {
+      nuevoEstado = EstadoApp.ApiOk;
+    } else {
+      nuevoEstado = EstadoApp.ApiMantenimiento;
+    }
+
+    this.estadoAppSubject.next(nuevoEstado);
+    this.apiDisponibleSubject.next(nuevoEstado === EstadoApp.ApiOk);
+  }
+
+  private actualizarEstadoBackend(valor: boolean) {
     this.estadoBackend$.next(valor);
     this.ultimaActualizacion = Date.now();
+    this.clasificarEstadoApp();
   }
 
-  /**
-   * Configura Pusher para recibir eventos 'online'/'offline' en tiempo real
-   */
+  private actualizarEstadoDispositivo(conectado: boolean) {
+    this.estadoDispositivo$.next(conectado);
+    this.clasificarEstadoApp();
+  }
+
   private iniciarMonitorPusher() {
     const pusher = new Pusher(environment.pusherKey, {
-      cluster: 'mt1',   // Ajusta según tu configuración de Pusher
-      forceTLS: true
+      cluster: 'mt1',
+      forceTLS: true,
     });
-
     const canal = pusher.subscribe('estado-api');
-
-    // Evento cuando la API queda online
-    canal.bind('online', () => this.actualizar(true));
-    // Evento cuando la API cae offline
-    canal.bind('offline', () => this.actualizar(false));
+    canal.bind('online',  () => this.actualizarEstadoBackend(true));
+    canal.bind('offline', () => this.actualizarEstadoBackend(false));
   }
 
-  /**
-   * Cada 5s evalúa si han pasado >20s sin evento; de ser así, hace un ping al /ping
-   */
   private iniciarMonitorAutomatico() {
     setInterval(async () => {
-      const segundosPasados = (Date.now() - this.ultimaActualizacion) / 1000;
+      if (!this.estadoDispositivo$.value) return;
 
-      if (segundosPasados > 20) {
-        try {
-          const res = await Http.get({
-            url: `${environment.apiUrl}/ping`,
-            headers: {},
-            params: {}
-          });
-          this.actualizar(res.status === 200);
-        } catch {
-          this.actualizar(false);
-        }
+      const segs = (Date.now() - this.ultimaActualizacion) / 1000;
+      if (segs <= 20) return;
+
+      try {
+        const res = await Http.get({ url: `${environment.apiUrl}/ping` });
+        this.actualizarEstadoBackend(res.status === 200);
+      } catch {
+        this.actualizarEstadoBackend(false);
       }
-      // Si hubo evento hace menos de 20s, no hacemos ping
     }, 5000);
+  }
+
+  private async iniciarMonitorRed() {
+    const status = await Network.getStatus();
+    this.actualizarEstadoDispositivo(status.connected);
+    Network.addListener('networkStatusChange', s =>
+      this.actualizarEstadoDispositivo(s.connected)
+    );
   }
 }

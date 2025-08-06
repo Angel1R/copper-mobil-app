@@ -72,3 +72,23 @@ ion-button {
     font-size: 14px;
   }
 }
+
+.card--offline {
+  max-width: 280px;       /* ancho reducido */
+  margin: 12px auto;      /* centrado con menos margen vertical */
+  --padding-start: 8px;   /* menos padding */
+  --padding-end: 8px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+  font-size: 0.9rem;      /* texto ligeramente más pequeño */
+}
+
+.card--maintenance {
+  max-width: 360px;       /* ancho un poco mayor */
+  margin: 20px auto;      /* más separación arriba/abajo */
+  --padding-start: 16px;  /* padding generoso */
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  font-size: 1rem;        /* tamaño de texto normal */
+}
